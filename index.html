@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v15 (Codex)</title>
+    <title>Stamina: WOH Edition v16 (Forms Overhaul)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -89,6 +89,7 @@
         button.small-btn { font-size: 16px; padding: 6px; margin-top: 10px; background: #fff; color: #000; border: 2px dashed #000; }
         button.small-btn:hover { background: #000; color: #fff; }
 
+        /* СПИСКИ */
         .task-item { border: 2px solid #000; padding: 10px; margin-bottom: 10px; background: #fff; box-shadow: 3px 3px 0px #000; display: flex; justify-content: space-between; align-items: center; }
         .task-name { font-size: 18px; font-weight: bold; line-height: 1.1; }
         .task-xp { font-size: 14px; background: #000; color: #fff; padding: 2px 5px; margin-top: 4px; display: inline-block; }
@@ -104,7 +105,44 @@
         .title-label { font-size: 16px; color: #666; }
         .title-name { font-size: 24px; font-weight: bold; text-transform: uppercase; margin-top: 5px; animation: textGlitch 3s infinite; }
 
-        /* СТИЛИ ДЛЯ КОДЕКСА */
+        /* --- НОВЫЙ ДИЗАЙН ФОРМЫ (NEW INCIDENT) --- */
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 18px; color: #333; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
+        
+        input[type="text"], input[type="date"], select {
+            width: 100%; box-sizing: border-box; border: 2px solid #000; padding: 10px;
+            font-family: 'VT323', monospace; font-size: 20px; background: #fff; color: #000;
+            outline: none; -webkit-appearance: none; appearance: none; border-radius: 0;
+            box-shadow: 2px 2px 0px #000;
+            transition: all 0.1s;
+        }
+        input[type="text"]:focus, input[type="date"]:focus, select:focus {
+            background: #000; color: #fff; box-shadow: 4px 4px 0px #ff0000;
+            transform: translate(-2px, -2px);
+        }
+        input[type="text"]::placeholder { color: #aaa; }
+        
+        /* Кастомная стрелка селекта */
+        .select-wrapper { position: relative; }
+        .select-wrapper::after {
+            content: '▼'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            pointer-events: none; font-size: 14px; color: #000;
+        }
+        .select-wrapper:focus-within::after { color: #fff; }
+
+        /* Кнопки переключения XP */
+        .xp-selector { display: flex; gap: 8px; }
+        .xp-selector input[type="radio"] { display: none; }
+        .xp-selector label {
+            flex: 1; border: 2px solid #000; text-align: center; padding: 8px 0;
+            font-size: 18px; cursor: pointer; text-transform: uppercase; background: #fff; color: #000;
+            box-shadow: 2px 2px 0px #000; font-weight: bold; transition: 0.1s;
+        }
+        .xp-selector input[type="radio"]:checked + label {
+            background: #000; color: #fff; box-shadow: inset 2px 2px 0px rgba(0,0,0,0.8);
+            transform: translate(2px, 2px);
+        }
+
         .codex-section { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dotted #ccc; }
         .codex-h { font-size: 18px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
         .codex-p { font-size: 16px; line-height: 1.2; margin: 0 0 5px 0; }
@@ -147,27 +185,47 @@
 
     <div id="createTaskScreen" class="frame hidden">
         <div class="header-title">NEW INCIDENT</div>
-        <label>Описание дела</label>
-        <input type="text" id="taskName" placeholder="Провести ритуал...">
-        <label>Сфера расследования</label>
-        <select id="taskStat">
-            <option value="19ce1807-5ea9-8096-96bd-ce6d6f1c6944">🤓 Сила Клерка</option>
-            <option value="19ce1807-5ea9-8033-96d6-e68cba9370fc">🫁 Здоровье</option>
-            <option value="19ce1807-5ea9-80b2-89df-f78ce08cbb8a">📻 Музыка</option>
-            <option value="19ce1807-5ea9-80ac-80ea-f8a186b375e9">👺 Рисование</option>
-            <option value="19ce1807-5ea9-8064-99c1-c360929869e9">👽 3Д</option>
-            <option value="19ce1807-5ea9-80f2-9009-fb37181d34af">🕵️‍♂️ Монтаж</option>
-            <option value="19ee1807-5ea9-800c-ba78-e54ede7dac9a">🕎 Mentality</option>
-        </select>
-        <label>Уровень угрозы (XP)</label>
-        <select id="taskXP">
-            <option value="15">15 XP (Легко)</option>
-            <option value="30">30 XP (Опасно)</option>
-            <option value="50">50 XP (Смертельно)</option>
-        </select>
-        <label>Дата инцидента</label>
-        <input type="date" id="taskDate">
-        <button id="browserSubmitBtn" class="menu-btn" style="margin-top: 20px; background: #fff; color: #000;" onclick="submitTask()">[ ЗАНЕСТИ В АРХИВ ]</button>
+        
+        <div class="input-group">
+            <label>> ОПИСАНИЕ ИНЦИДЕНТА</label>
+            <input type="text" id="taskName" placeholder="Изгнать демона прокрастинации..." autocomplete="off">
+        </div>
+
+        <div class="input-group">
+            <label>> СФЕРА РАССЛЕДОВАНИЯ</label>
+            <div class="select-wrapper">
+                <select id="taskStat">
+                    <option value="19ce1807-5ea9-8096-96bd-ce6d6f1c6944">🤓 Сила Клерка</option>
+                    <option value="19ce1807-5ea9-8033-96d6-e68cba9370fc">🫁 Здоровье</option>
+                    <option value="19ce1807-5ea9-80b2-89df-f78ce08cbb8a">📻 Музыка</option>
+                    <option value="19ce1807-5ea9-80ac-80ea-f8a186b375e9">👺 Рисование</option>
+                    <option value="19ce1807-5ea9-8064-99c1-c360929869e9">👽 3Д</option>
+                    <option value="19ce1807-5ea9-80f2-9009-fb37181d34af">🕵️‍♂️ Монтаж</option>
+                    <option value="19ee1807-5ea9-800c-ba78-e54ede7dac9a">🕎 Mentality</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>> УРОВЕНЬ УГРОЗЫ (XP)</label>
+            <div class="xp-selector">
+                <input type="radio" id="xp15" name="taskXP" value="15" checked>
+                <label for="xp15">15 XP</label>
+
+                <input type="radio" id="xp30" name="taskXP" value="30">
+                <label for="xp30">30 XP</label>
+
+                <input type="radio" id="xp50" name="taskXP" value="50">
+                <label for="xp50">50 XP</label>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label>> ДАТА КАТАСТРОФЫ</label>
+            <input type="date" id="taskDate">
+        </div>
+
+        <button id="browserSubmitBtn" class="menu-btn" style="margin-top: 25px; background: #000; color: #fff;" onclick="submitTask()">[ ЗАНЕСТИ В АРХИВ ]</button>
     </div>
 
     <div id="viewTasksScreen" class="frame hidden">
@@ -194,7 +252,7 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const AUTH_WEBHOOK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/ba753654-0bcf-44b6-bd2f-299a6a5b389f'; 
+        const AUTH_WEBHOOK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/b0607fcb-775f-466e-8f2d-cc3b81fb632e'; 
         const N8N_CREATE_TASK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/280b0523-75cd-4075-8368-2c63ab9bc3ae';
         const N8N_GET_TASKS_URL = 'https://n8n.nevn8n8amocrm.online/webhook/stamina-get-tasks';
         const N8N_COMPLETE_TASK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/stamina-complete-task';
@@ -204,10 +262,9 @@
         document.getElementById('taskDate').value = today;
 
         let typeWriterTimeout;
-        let globalStatsData = []; // Храним стату для Кодекса
-        let backTarget = 'mainMenuScreen'; // Куда возвращаться
+        let globalStatsData = []; 
+        let backTarget = 'mainMenuScreen'; 
 
-        // НАСТРОЙКА КНОПКИ НАЗАД ДЛЯ МНОГОУРОВНЕВОСТИ
         tg.BackButton.onClick(() => {
             if(backTarget === 'statsScreen') loadStats();
             else openScreen(backTarget);
@@ -280,10 +337,13 @@
         }
 
         async function submitTask() {
+            // Считываем значение выбранной радио-кнопки для XP
+            const selectedXp = document.querySelector('input[name="taskXP"]:checked').value;
+            
             const payload = {
                 task_name: document.getElementById('taskName').value,
                 stat_id: document.getElementById('taskStat').value,
-                xp: parseInt(document.getElementById('taskXP').value),
+                xp: parseInt(selectedXp),
                 date: document.getElementById('taskDate').value
             };
             if (!payload.task_name) return;
@@ -336,7 +396,6 @@
             } catch (e) { btn.innerText = '[ ОШИБКА ]'; }
         }
 
-        // БАЗЫ ЗВАНИЙ (ДЛЯ РАСЧЕТОВ)
         const titleTrees = {
             "сила клерка": ["Офисная Жертва", "Младший Детектив", "Архивариус Ужаса", "Куратор Запретного", "Жрец Бюрократии"],
             "здоровье": ["Хрупкий Сосуд", "Выживший в Шиокаве", "Искатель Истины", "Закаленный Мраком", "Бессмертный Упырь"],
@@ -353,7 +412,7 @@
             "монтаж+сила клерка": "Цензор Проклятых Кассет", "здоровье+монтаж": "Уцелевший Режиссер", "здоровье+рисование": "Анатом Кошмаров",
             "3д+сила клерка": "Архитектор Кабинетов Зла", "3д+mentality": "Магистр Иных Сфер"
         };
-        const tierLevels = [1, 3, 6, 10, 15]; // Уровни для переходов базы
+        const tierLevels = [1, 3, 6, 10, 15];
 
         function calcLvl(xp) {
             let level = 1;
@@ -382,7 +441,6 @@
                     return;
                 }
 
-                // РАСЧЕТ ТЕКУЩЕГО ЗВАНИЯ
                 const p = globalStatsData[0];
                 const s = globalStatsData.length > 1 ? globalStatsData[1] : null;
                 const pLvl = calcLvl(p.xp);
@@ -422,11 +480,9 @@
             } catch (e) { container.innerHTML = `<p style="text-align:center; color:red;">[ СБОЙ БИОМЕТРИИ ]</p>`; }
         }
 
-        // --- ЛОГИКА КОДЕКСА (ЭКРАН РАСШИФРОВКИ) ---
         function openCodex() {
             openScreen('codexScreen', 'statsScreen');
             const container = document.getElementById('codexContent');
-            
             if (globalStatsData.length === 0) {
                 container.innerHTML = '<p>Нет данных для анализа.</p>'; return;
             }
@@ -442,15 +498,11 @@
             const basePath = titleTrees[pName] || [];
             
             let isHybrid = false;
-            let hybridName = "";
             let sNameRaw = s ? s.name.toLowerCase().trim() : "";
             
             if (s && p.xp > 0 && s.xp >= p.xp * 0.65) {
                 let comboKey = [pName, sNameRaw].sort().join("+");
-                if (comboDict[comboKey]) {
-                    isHybrid = true;
-                    hybridName = comboDict[comboKey];
-                }
+                if (comboDict[comboKey]) isHybrid = true;
             }
 
             let html = `
@@ -464,7 +516,7 @@
                 html += `
                 <div class="codex-section">
                     <div class="codex-h">МУТАЦИЯ: АКТИВНА</div>
-                    <p class="codex-p">Влияние <span class="highlight">${s.name}</span> достаточно велико (более 65% от основы), чтобы запустить синтез. Ваша сущность эволюционировала в гибрид.</p>
+                    <p class="codex-p">Влияние <span class="highlight">${s.name}</span> достаточно велико, чтобы запустить синтез. Ваша сущность эволюционировала в гибрид.</p>
                 </div>`;
             } else {
                 html += `
@@ -474,27 +526,25 @@
                 </div>`;
             }
 
-            // ПУТЬ БАЗОВОЙ ЭВОЛЮЦИИ
             let nextLevelReq = tier < 4 ? tierLevels[tier + 1] : "MAX";
             let nextTitle = tier < 4 ? basePath[tier + 1] : "АБСОЛЮТ";
             
             html += `
                 <div class="codex-section">
                     <div class="codex-h">ВЕКТОР ЭВОЛЮЦИИ</div>
-                    <p class="codex-p">Чтобы перейти на следующую ступень базового пути, вам нужен <span class="highlight">УРОВЕНЬ ${nextLevelReq}</span> в навыке <b>${p.name}</b>.</p>
+                    <p class="codex-p">Чтобы перейти на следующую ступень, вам нужен <span class="highlight">УРОВЕНЬ ${nextLevelReq}</span> в навыке <b>${p.name}</b>.</p>
                     <p class="codex-p">Грядущая форма: <b>[ ${nextTitle} ]</b></p>
                 </div>
             `;
 
-            // ПУТЬ СИНТЕЗА (ГИБРИДЫ)
             let reqXp = Math.floor(p.xp * 0.65);
             html += `<div class="codex-section"><div class="codex-h">ВЕКТОР СИНТЕЗА</div>`;
             
             if (isHybrid) {
-                html += `<p class="codex-p">Чтобы удержать гибридную форму, поддерживайте <b>${s.name}</b> не ниже <span class="highlight">${reqXp} XP</span>. Если Доминанта вырвется далеко вперед, связь распадется.</p>`;
+                html += `<p class="codex-p">Чтобы удержать форму, держите <b>${s.name}</b> не ниже <span class="highlight">${reqXp} XP</span>.</p>`;
             } else if (s) {
                 let xpShort = reqXp - s.xp;
-                html += `<p class="codex-p">Ближайший катализатор мутации — <b>${s.name}</b>. Наберите еще <span class="highlight">${xpShort} XP</span> в этой характеристике, чтобы открыть секретный гибридный класс.</p>`;
+                html += `<p class="codex-p">Катализатор мутации — <b>${s.name}</b>. Добудьте еще <span class="highlight">${xpShort} XP</span>, чтобы запустить синтез.</p>`;
             }
             html += `</div>`;
 
