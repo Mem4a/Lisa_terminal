@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v7 (Live)</title>
+    <title>Stamina: WOH Edition v8 (Audio Control)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -52,6 +52,30 @@
             padding-bottom: 80px;
         }
 
+        /* --- КНОПКА ЗВУКА --- */
+        .sound-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            background: #000;
+            color: #fff;
+            border: 2px solid #000;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 999;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.5);
+            transition: transform 0.05s;
+        }
+
+        .sound-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: none;
+            background: #fff;
+            color: #000;
+        }
+
         .frame {
             border: var(--border-style);
             padding: 15px;
@@ -63,6 +87,7 @@
             box-sizing: border-box;
             position: relative;
             animation: ditherBoot 0.4s steps(4) ease-out;
+            margin-top: 40px; /* Отступ сверху, чтобы не наслаивалось на кнопку звука */
         }
 
         .error-frame {
@@ -70,6 +95,7 @@
             box-shadow: 6px 6px 0px var(--error-color);
             color: var(--error-color);
             text-align: center;
+            margin-top: 15px;
         }
 
         .header-title {
@@ -171,7 +197,9 @@
         <source src="https://files.catbox.moe/nnp5ww.mp3" type="audio/mpeg">
     </audio>
 
-    <div id="loaderScreen" class="frame" style="cursor: pointer;" onclick="authenticate()">
+    <button id="soundToggleBtn" class="sound-btn hidden" onclick="toggleSound()">[ ♪ ON ]</button>
+
+    <div id="loaderScreen" class="frame" style="margin-top: 15px; cursor: pointer;" onclick="authenticate()">
         <div class="header-title">SYSTEM BOOT</div>
         <p id="loaderStatus" style="text-align:center; font-size: 20px; margin-top: 30px;" class="blink-text">[ НАЖМИ НА ЭКРАН ДЛЯ ЗАПУСКА ]</p>
     </div>
@@ -231,7 +259,6 @@
         tg.setHeaderColor('#e6e6e6'); 
         tg.setBackgroundColor('#e6e6e6');
 
-        // Твои боевые хуки n8n
         const AUTH_WEBHOOK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/b0607fcb-775f-466e-8f2d-cc3b81fb632e'; 
         const N8N_WEBHOOK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/ba753654-0bcf-44b6-bd2f-299a6a5b389f';
 
@@ -239,6 +266,14 @@
         document.getElementById('taskDate').value = today;
 
         let currentUser = null; 
+
+        // ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ ЗВУКА
+        function toggleSound() {
+            const audio = document.getElementById('bgMusic');
+            const btn = document.getElementById('soundToggleBtn');
+            audio.muted = !audio.muted;
+            btn.innerText = audio.muted ? '[ ♪ OFF ]' : '[ ♪ ON ]';
+        }
 
         async function authenticate() {
             const audio = document.getElementById('bgMusic');
@@ -268,6 +303,8 @@
                     currentUser = data;
                     if (data.name) document.getElementById('userName').innerText = data.name;
                     openScreen('mainMenuScreen'); 
+                    // Показываем кнопку звука при успешном входе
+                    document.getElementById('soundToggleBtn').classList.remove('hidden');
                 } else {
                     openScreen('accessDeniedScreen'); 
                 }
@@ -319,7 +356,6 @@
             if (tg.MainButton.isVisible) tg.MainButton.showProgress();
             
             try {
-                // РЕАЛЬНАЯ ОТПРАВКА ДАННЫХ В N8N
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
