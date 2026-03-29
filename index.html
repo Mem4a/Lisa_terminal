@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v8 (Audio Control)</title>
+    <title>Stamina: WOH Edition v9 (Voice)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -14,7 +14,6 @@
             --error-color: #ff0000;
         }
 
-        /* --- АНИМАЦИИ --- */
         @keyframes textGlitch {
             0% { transform: translate(0); text-shadow: none; }
             25% { transform: translate(-2px, 1px); color: #ff0000; }
@@ -34,10 +33,7 @@
             to { opacity: 1; transform: translateY(0); filter: contrast(100%); }
         }
 
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
         body {
             font-family: 'VT323', monospace;
@@ -52,143 +48,73 @@
             padding-bottom: 80px;
         }
 
-        /* --- КНОПКА ЗВУКА --- */
         .sound-btn {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            background: #000;
-            color: #fff;
-            border: 2px solid #000;
-            font-family: 'VT323', monospace;
-            font-size: 16px;
-            padding: 5px 10px;
-            cursor: pointer;
-            z-index: 999;
-            box-shadow: 3px 3px 0px rgba(0,0,0,0.5);
-            transition: transform 0.05s;
+            position: fixed; top: 15px; right: 15px;
+            background: #000; color: #fff; border: 2px solid #000;
+            font-family: 'VT323', monospace; font-size: 16px;
+            padding: 5px 10px; cursor: pointer; z-index: 999;
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.5); transition: transform 0.05s;
         }
 
-        .sound-btn:active {
-            transform: translate(2px, 2px);
-            box-shadow: none;
-            background: #fff;
-            color: #000;
-        }
+        .sound-btn:active { transform: translate(2px, 2px); box-shadow: none; background: #fff; color: #000; }
 
         .frame {
-            border: var(--border-style);
-            padding: 15px;
-            width: 100%;
-            max-width: 380px;
-            background: #fff;
-            box-shadow: 6px 6px 0px #000;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-            position: relative;
-            animation: ditherBoot 0.4s steps(4) ease-out;
-            margin-top: 40px; /* Отступ сверху, чтобы не наслаивалось на кнопку звука */
+            border: var(--border-style); padding: 15px; width: 100%; max-width: 380px;
+            background: #fff; box-shadow: 6px 6px 0px #000; margin-bottom: 20px;
+            box-sizing: border-box; position: relative; animation: ditherBoot 0.4s steps(4) ease-out; margin-top: 40px;
         }
 
-        .error-frame {
-            border: 3px solid var(--error-color);
-            box-shadow: 6px 6px 0px var(--error-color);
-            color: var(--error-color);
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .header-title {
-            font-size: 26px;
-            text-transform: uppercase;
-            border-bottom: var(--border-style);
-            margin-bottom: 15px;
-            text-align: center;
-            padding-bottom: 5px;
-            font-weight: bold;
-        }
+        .error-frame { border-color: var(--error-color); box-shadow: 6px 6px 0px var(--error-color); color: var(--error-color); text-align: center; }
+        .header-title { font-size: 26px; text-transform: uppercase; border-bottom: var(--border-style); margin-bottom: 15px; text-align: center; padding-bottom: 5px; font-weight: bold; }
 
         .manga-panel {
-            width: 100%;
-            height: 160px; 
-            border: var(--border-style);
-            margin: 0 auto 15px;
-            background: #000;
-            box-shadow: 4px 4px 0px #000;
-            overflow: hidden;
-            animation: panelPulse 4s ease-in-out infinite;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100%; height: 160px; border: var(--border-style);
+            margin: 0 auto 15px; background: #000; box-shadow: 4px 4px 0px #000;
+            overflow: hidden; animation: panelPulse 4s ease-in-out infinite;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; /* ВАЖНО ДЛЯ БАБЛА */
         }
 
-        .pixel-portrait {
-            width: 100%;
-            height: 100%;
-            display: block;
-            object-fit: cover; 
-            image-rendering: pixelated; 
-            filter: grayscale(100%) contrast(120%);
-        }
+        .pixel-portrait { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; filter: grayscale(100%) contrast(120%); }
 
-        button.menu-btn {
-            width: 100%;
-            background: #000;
-            color: #fff;
-            border: 2px solid #000;
-            font-family: 'VT323', monospace;
-            font-size: 22px;
-            padding: 12px;
-            margin: 6px 0;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: transform 0.05s;
-            position: relative;
-        }
-
-        button.menu-btn:hover {
+        /* --- БАБЛ ЛИЗЫ --- */
+        .speech-bubble {
+            position: absolute;
             background: #fff;
             color: #000;
-            animation: textGlitch 0.3s steps(2) infinite;
-        }
-
-        button.menu-btn:active {
-            transform: translate(3px, 3px);
-            box-shadow: none;
-            animation: none;
-        }
-
-        label {
-            display: block;
-            margin-top: 10px;
-            margin-bottom: 5px;
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        input, select {
-            width: 100%;
-            box-sizing: border-box;
             border: 2px solid #000;
-            padding: 10px;
+            padding: 6px 10px;
             font-family: 'VT323', monospace;
-            font-size: 18px;
-            background: #fff;
-            color: #000;
-            outline: none;
+            font-size: 16px;
+            line-height: 1.1;
+            max-width: 140px;
+            z-index: 10;
+            box-shadow: 3px 3px 0px #000;
+            /* СЕМПАЙ, МЕНЯЙ ЭТИ ЗНАЧЕНИЯ, ЧТОБЫ ДВИГАТЬ БАБЛ! */
+            top: 20px;   /* Отступ сверху */
+            left: 20px;  /* Отступ слева */
         }
 
-        input:focus, select:focus {
-            background: #000;
-            color: #fff;
+        /* Хвостик бабла (указывает в рот) */
+        .speech-bubble::after {
+            content: ''; position: absolute;
+            bottom: -10px; left: 15px; /* left: 15px двигает хвостик по низу бабла */
+            border-width: 10px 10px 0 0; border-style: solid; border-color: #000 transparent transparent transparent;
+        }
+        .speech-bubble::before {
+            content: ''; position: absolute;
+            bottom: -6px; left: 17px;
+            border-width: 8px 8px 0 0; border-style: solid; border-color: #fff transparent transparent transparent; z-index: 1;
         }
 
+        button.menu-btn { width: 100%; background: #000; color: #fff; border: 2px solid #000; font-family: 'VT323', monospace; font-size: 22px; padding: 12px; margin: 6px 0; cursor: pointer; text-transform: uppercase; transition: transform 0.05s; position: relative; }
+        button.menu-btn:hover { background: #fff; color: #000; animation: textGlitch 0.3s steps(2) infinite; }
+        button.menu-btn:active { transform: translate(3px, 3px); box-shadow: none; animation: none; }
+        label { display: block; margin-top: 10px; margin-bottom: 5px; font-size: 20px; font-weight: bold; }
+        input, select { width: 100%; box-sizing: border-box; border: 2px solid #000; padding: 10px; font-family: 'VT323', monospace; font-size: 18px; background: #fff; color: #000; outline: none; }
+        input:focus, select:focus { background: #000; color: #fff; }
         .hidden { display: none !important; }
-
-        .blink-text {
-            animation: blink 1.5s steps(2) infinite;
-            cursor: pointer;
-        }
+        .blink-text { animation: blink 1.5s steps(2) infinite; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -208,27 +134,25 @@
         <div class="header-title" style="border-bottom: 3px solid var(--error-color);">FATAL ERROR</div>
         <div style="font-size: 60px; margin: 10px 0;">👁️</div>
         <p style="font-size: 22px; font-weight: bold;">ДОСТУП ЗАПРЕЩЕН</p>
-        <p style="font-size: 18px;">Биометрический ID не найден в Базе.</p>
     </div>
 
     <div id="mainMenuScreen" class="frame hidden">
         <div class="manga-panel">
             <img src="https://www.stridepr.com/wp-content/uploads/2023/10/WORLD-OF-HORROR-v1.0-Launch-Trailer-0-55-screenshot-360x240.png" alt="WOH Scene" class="pixel-portrait">
+            <div id="lisaBubble" class="speech-bubble hidden">...</div>
         </div>
 
         <div class="header-title">LISA TERMINAL</div>
         <p style="text-align: center; font-size: 18px; font-weight: bold;">Добро пожаловать, <span id="userName">Семпай</span>.</p>
 
         <button class="menu-btn" onclick="openScreen('createTaskScreen')">[+] Создать Квест</button>
-        <button class="menu-btn" onclick="alert('Открываю список...')">[=] Задачи</button>
+        <button class="menu-btn" onclick="lisaSpeak('Опция пока недоступна, Семпай!')">[=] Задачи</button>
     </div>
 
     <div id="createTaskScreen" class="frame hidden">
         <div class="header-title">NEW QUEST</div>
-        
         <label>Название квеста</label>
         <input type="text" id="taskName" placeholder="Изгнать прокрастинацию...">
-        
         <label>Характеристика</label>
         <select id="taskStat">
             <option value="19ce1807-5ea9-8096-96bd-ce6d6f1c6944">🤓 Сила Клерка</option>
@@ -239,17 +163,14 @@
             <option value="19ce1807-5ea9-80f2-9009-fb37181d34af">🕵️‍♂️ Монтаж</option>
             <option value="19ee1807-5ea9-800c-ba78-e54ede7dac9a">🕎 Mentality</option>
         </select>
-
         <label>Сложность (XP)</label>
         <select id="taskXP">
             <option value="15">15 XP (Легко)</option>
             <option value="30">30 XP (Средне)</option>
             <option value="50">50 XP (Хардкор)</option>
         </select>
-
         <label>Дата выполнения</label>
         <input type="date" id="taskDate">
-        
         <button id="browserSubmitBtn" class="menu-btn" style="margin-top: 20px; background: #fff; color: #000;" onclick="submitTask()">[ ОТПРАВИТЬ В БАЗУ ]</button>
     </div>
 
@@ -266,8 +187,26 @@
         document.getElementById('taskDate').value = today;
 
         let currentUser = null; 
+        let typeWriterTimeout;
 
-        // ФУНКЦИЯ ПЕРЕКЛЮЧЕНИЯ ЗВУКА
+        // ФУНКЦИЯ "ЛИЗА ГОВОРИТ"
+        function lisaSpeak(text) {
+            const bubble = document.getElementById('lisaBubble');
+            bubble.classList.remove('hidden');
+            bubble.innerText = '';
+            clearTimeout(typeWriterTimeout);
+
+            let i = 0;
+            function typeWriter() {
+                if (i < text.length) {
+                    bubble.innerHTML += text.charAt(i);
+                    i++;
+                    typeWriterTimeout = setTimeout(typeWriter, 30); // Скорость печати
+                }
+            }
+            typeWriter();
+        }
+
         function toggleSound() {
             const audio = document.getElementById('bgMusic');
             const btn = document.getElementById('soundToggleBtn');
@@ -287,8 +226,7 @@
             document.getElementById('loaderScreen').style.cursor = "default";
             document.getElementById('loaderScreen').onclick = null;
 
-            let tgId = tg.initDataUnsafe?.user?.id;
-            if (!tgId) tgId = 1211686949; 
+            let tgId = tg.initDataUnsafe?.user?.id || 1211686949; 
 
             try {
                 const response = await fetch(AUTH_WEBHOOK_URL, {
@@ -303,13 +241,13 @@
                     currentUser = data;
                     if (data.name) document.getElementById('userName').innerText = data.name;
                     openScreen('mainMenuScreen'); 
-                    // Показываем кнопку звука при успешном входе
                     document.getElementById('soundToggleBtn').classList.remove('hidden');
+                    // ЛИЗА ЗДОРОВАЕТСЯ
+                    setTimeout(() => lisaSpeak(`С возвращением в систему, ${data.name || "Семпай"}.`), 500);
                 } else {
                     openScreen('accessDeniedScreen'); 
                 }
             } catch (error) {
-                console.error("Auth error:", error);
                 statusText.innerText = "[ ОШИБКА СЕРВЕРА ]";
                 statusText.style.color = "red";
             }
@@ -318,6 +256,7 @@
         function openScreen(screenId) {
             document.querySelectorAll('.frame').forEach(el => el.classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
+            document.getElementById('lisaBubble').classList.add('hidden'); // Скрываем бабл при смене экрана
 
             if (screenId === 'loaderScreen' || screenId === 'mainMenuScreen' || screenId === 'accessDeniedScreen') {
                 tg.BackButton.hide();
@@ -363,21 +302,17 @@
                 });
 
                 if (response.ok) {
-                    if (tg.showAlert) {
-                        tg.showAlert("Квест принят, Семпай! База обновлена.");
-                    } else {
-                        alert("Успех! Данные отправлены в n8n.");
-                    }
                     document.getElementById('taskName').value = '';
                     openScreen('mainMenuScreen');
+                    // ЛИЗА ПОДТВЕРЖДАЕТ
+                    setTimeout(() => lisaSpeak("Квест занесен в базу! (o^▽^o)"), 500);
                 } else {
-                    const errMsg = "Ошибка при записи. Проверь настройки Webhook в n8n!";
+                    const errMsg = "Ошибка при записи в n8n!";
                     tg.showAlert ? tg.showAlert(errMsg) : alert(errMsg);
                 }
 
             } catch (error) {
-                console.error("Fetch error:", error);
-                const errMsg = "Ошибка сети. Терминал не смог связаться с базой.";
+                const errMsg = "Ошибка сети.";
                 tg.showAlert ? tg.showAlert(errMsg) : alert(errMsg);
             } finally {
                 if (tg.MainButton.isVisible) tg.MainButton.hideProgress();
