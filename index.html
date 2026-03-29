@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v5 (Auth)</title>
+    <title>Stamina: WOH Edition v7 (Live)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -231,25 +231,20 @@
         tg.setHeaderColor('#e6e6e6'); 
         tg.setBackgroundColor('#e6e6e6');
 
-        // ==== ССЫЛКИ НА ТВОИ ВЕБХУКИ n8n ====
-        // Сюда вставь URL из твоего воркфлоу авторизации (тот, что ты мне скинул)
-        const AUTH_WEBHOOK_URL = 'https://ТВОЙ_N8N/webhook/b0607fcb-775f-466e-8f2d-cc3b81fb632e'; 
-        // Сюда вставь URL для создания задач
-        const N8N_WEBHOOK_URL = 'https://ТВОЙ_N8N/webhook/stamina-create-task';
+        // Твои боевые хуки n8n
+        const AUTH_WEBHOOK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/b0607fcb-775f-466e-8f2d-cc3b81fb632e'; 
+        const N8N_WEBHOOK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/ba753654-0bcf-44b6-bd2f-299a6a5b389f';
 
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('taskDate').value = today;
 
-        let currentUser = null; // Будем хранить данные юзера
+        let currentUser = null; 
 
-        // ФУНКЦИЯ АВТОРИЗАЦИИ
         async function authenticate() {
-            // Запускаем атмосферу
             const audio = document.getElementById('bgMusic');
             audio.volume = 0.5; 
             audio.play().catch(e => console.log("Браузер заблокировал аудио", e));
 
-            // Меняем текст, убираем кликабельность (чтобы не спамили)
             const statusText = document.getElementById('loaderStatus');
             statusText.innerText = "ИДЕНТИФИКАЦИЯ...";
             statusText.classList.remove('blink-text');
@@ -257,20 +252,10 @@
             document.getElementById('loaderScreen').style.cursor = "default";
             document.getElementById('loaderScreen').onclick = null;
 
-            const tgId = tg.initDataUnsafe?.user?.id || 123456789; // 123456789 для теста в браузере
+            let tgId = tg.initDataUnsafe?.user?.id;
+            if (!tgId) tgId = 1211686949; 
 
             try {
-                // Если ты не настроил Вебхук, раскомментируй блок ниже для теста в браузере:
-                /*
-                setTimeout(() => {
-                    document.getElementById('userName').innerText = tg.initDataUnsafe?.user?.first_name || "Семпай";
-                    openScreen('mainMenuScreen'); // Вход разрешен
-                    // openScreen('accessDeniedScreen'); // Тест ошибки
-                }, 1500);
-                return;
-                */
-
-                // Реальный запрос в твой n8n
                 const response = await fetch(AUTH_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -282,11 +267,10 @@
                 if (response.ok && data.status === 'ok' && data.is_active) {
                     currentUser = data;
                     if (data.name) document.getElementById('userName').innerText = data.name;
-                    openScreen('mainMenuScreen'); // Доступ разрешен
+                    openScreen('mainMenuScreen'); 
                 } else {
-                    openScreen('accessDeniedScreen'); // Ошибка доступа
+                    openScreen('accessDeniedScreen'); 
                 }
-
             } catch (error) {
                 console.error("Auth error:", error);
                 statusText.innerText = "[ ОШИБКА СЕРВЕРА ]";
@@ -324,27 +308,43 @@
                 stat_id: document.getElementById('taskStat').value,
                 xp: parseInt(document.getElementById('taskXP').value),
                 date: document.getElementById('taskDate').value,
-                user_tg_id: tg.initDataUnsafe?.user?.id || 123456789 
+                user_tg_id: tg.initDataUnsafe?.user?.id || 1211686949 
             };
 
             if (!payload.task_name) {
-                alert("Имя квеста не может быть пустым!");
+                tg.showAlert ? tg.showAlert("Имя квеста не может быть пустым!") : alert("Имя квеста не может быть пустым!");
                 return;
             }
 
             if (tg.MainButton.isVisible) tg.MainButton.showProgress();
             
             try {
-                // Здесь будет твой fetch на создание
-                setTimeout(() => {
-                    alert("Успех! Данные сформированы.");
+                // РЕАЛЬНАЯ ОТПРАВКА ДАННЫХ В N8N
+                const response = await fetch(N8N_WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    if (tg.showAlert) {
+                        tg.showAlert("Квест принят, Семпай! База обновлена.");
+                    } else {
+                        alert("Успех! Данные отправлены в n8n.");
+                    }
                     document.getElementById('taskName').value = '';
                     openScreen('mainMenuScreen');
-                    if (tg.MainButton.isVisible) tg.MainButton.hideProgress();
-                }, 500);
+                } else {
+                    const errMsg = "Ошибка при записи. Проверь настройки Webhook в n8n!";
+                    tg.showAlert ? tg.showAlert(errMsg) : alert(errMsg);
+                }
 
             } catch (error) {
-                alert("Ошибка сети.");
+                console.error("Fetch error:", error);
+                const errMsg = "Ошибка сети. Терминал не смог связаться с базой.";
+                tg.showAlert ? tg.showAlert(errMsg) : alert(errMsg);
+            } finally {
+                if (tg.MainButton.isVisible) tg.MainButton.hideProgress();
             }
         }
     </script>
