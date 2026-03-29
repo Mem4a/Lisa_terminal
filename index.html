@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v13 (Vitals)</title>
+    <title>Stamina: WOH Edition v14 (Titles & Classes)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -82,32 +82,32 @@
         }
 
         .speech-bubble::after {
-            content: ''; position: absolute;
-            top: -14px; right: -10px; 
+            content: ''; position: absolute; top: -14px; right: -10px; 
             border-width: 0 0 15px 15px; border-style: solid; border-color: transparent transparent #000 transparent;
         }
-        
         .speech-bubble::before {
-            content: ''; position: absolute;
-            top: -9px; right: -7px;
+            content: ''; position: absolute; top: -9px; right: -7px;
             border-width: 0 0 10px 10px; border-style: solid; border-color: transparent transparent #fff transparent; z-index: 1;
         }
 
         button.menu-btn { width: 100%; background: #000; color: #fff; border: 2px solid #000; font-family: 'VT323', monospace; font-size: 22px; padding: 12px; margin: 6px 0; cursor: pointer; text-transform: uppercase; transition: transform 0.05s; position: relative; }
         button.menu-btn:hover { background: #fff; color: #000; animation: textGlitch 0.3s steps(2) infinite; }
 
-        /* СПИСКИ ЗАДАЧ */
         .task-item { border: 2px solid #000; padding: 10px; margin-bottom: 10px; background: #fff; box-shadow: 3px 3px 0px #000; display: flex; justify-content: space-between; align-items: center; }
         .task-name { font-size: 18px; font-weight: bold; line-height: 1.1; }
         .task-xp { font-size: 14px; background: #000; color: #fff; padding: 2px 5px; margin-top: 4px; display: inline-block; }
         .complete-btn { background: #fff; color: #000; border: 2px solid #000; font-family: 'VT323', monospace; padding: 4px 8px; cursor: pointer; box-shadow: 2px 2px 0px #000; }
 
-        /* ШКАЛЫ ХАРАКТЕРИСТИК (SKILLS) */
         .stat-container { margin-bottom: 15px; }
         .stat-header { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; margin-bottom: 4px; }
         .stat-bar-bg { width: 100%; height: 16px; border: 2px solid #000; background: #fff; position: relative; box-sizing: border-box; }
         .stat-bar-fill { height: 100%; background: #000; transition: width 0.5s ease-out; }
         .stat-level { font-size: 14px; color: #666; }
+
+        /* СТИЛЬ ДЛЯ ЗВАНИЯ */
+        .title-block { border: 2px dashed #000; padding: 10px; margin-bottom: 20px; text-align: center; background: #f9f9f9; }
+        .title-label { font-size: 16px; color: #666; }
+        .title-name { font-size: 24px; font-weight: bold; text-transform: uppercase; margin-top: 5px; animation: textGlitch 3s infinite; }
 
         .hidden { display: none !important; }
         .blink-text { animation: blink 1.5s steps(2) infinite; cursor: pointer; }
@@ -124,6 +124,11 @@
     <div id="loaderScreen" class="frame" style="margin-top: 15px; cursor: pointer;" onclick="authenticate()">
         <div class="header-title">SYSTEM BOOT</div>
         <p id="loaderStatus" style="text-align:center; font-size: 20px; margin-top: 30px;" class="blink-text">[ НАЖМИ НА ЭКРАН ДЛЯ ЗАПУСКА ]</p>
+    </div>
+
+    <div id="accessDeniedScreen" class="frame hidden" style="border-color: red; color: red;">
+        <div class="header-title" style="border-color: red;">FATAL ERROR</div>
+        <p style="text-align:center; font-size: 22px;">В ДОСТУПЕ ОТКАЗАНО</p>
     </div>
 
     <div id="mainMenuScreen" class="frame hidden">
@@ -171,6 +176,10 @@
 
     <div id="statsScreen" class="frame hidden">
         <div class="header-title">VITALS & SKILLS</div>
+        <div class="title-block" id="titleBlockContainer" style="display: none;">
+            <div class="title-label">Ваш текущий профиль:</div>
+            <div class="title-name" id="playerTitle">АНАЛИЗ...</div>
+        </div>
         <div id="statsListContent"></div>
     </div>
 
@@ -182,7 +191,6 @@
         const N8N_CREATE_TASK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/ba753654-0bcf-44b6-bd2f-299a6a5b389f';
         const N8N_GET_TASKS_URL = 'https://n8n.nevn8n8amocrm.online/webhook/stamina-get-tasks';
         const N8N_COMPLETE_TASK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/stamina-complete-task';
-        // ВЕБХУК ДЛЯ ХАРАКТЕРИСТИК
         const N8N_GET_STATS_URL = 'https://n8n.nevn8n8amocrm.online/webhook/stamina-get-stats';
 
         const today = new Date().toISOString().split('T')[0];
@@ -326,12 +334,75 @@
             } catch (e) { btn.innerText = '[ ОШИБКА ]'; }
         }
 
-        // НОВАЯ ФУНКЦИЯ ДЛЯ ЗАГРУЗКИ ХАРАКТЕРИСТИК (STATS)
+        // --- ЛОГИКА ГЕНЕРАЦИИ ЗВАНИЙ (WOH THEME) ---
+        function calculateTitle(stats) {
+            if (!stats || stats.length === 0) return "Обреченный";
+
+            // Ранги по статам (1-2 лвл, 3-5 лвл, 6-9 лвл, 10-14 лвл, 15+ лвл)
+            const titleTrees = {
+                "сила клерка": ["Офисная Жертва", "Младший Детектив", "Архивариус Ужаса", "Куратор Запретного", "Жрец Бюрократии"],
+                "здоровье": ["Хрупкий Сосуд", "Выживший в Шиокаве", "Искатель Истины", "Закаленный Мраком", "Бессмертный Упырь"],
+                "музыка": ["Слушатель Помех", "Ловец Мертвых Частот", "Композитор Кошмаров", "Дирижер Ритуалов", "Голос Древних"],
+                "рисование": ["Маратель Бумаги", "Зарисовщик Теней", "Художник Скверны", "Творец Проклятых Гравюр", "Око Богов"],
+                "3д": ["Скульптор Глины", "Исказитель Форм", "Ткач Полигонов", "Архитектор Неевклидова Мира", "Владыка Измерений"],
+                "монтаж": ["Смотритель Кассет", "Склейщик Пленок", "Монтажер Снаффа", "Иллюзионист Хроники", "Властелин 25-го Кадра"],
+                "mentality": ["Параноик", "Исследователь Аномалий", "Оккультист", "Знаток Некрономикона", "Пробудивший Древних"]
+            };
+
+            // Гибридные классы (Секретные звания)
+            const comboDict = {
+                "mentality+сила клерка": "Безумный Архивариус",
+                "здоровье+сила клерка": "Неутомимый Детектив",
+                "3д+рисование": "Творец Плоти",
+                "монтаж+музыка": "Режиссер Радиопомех",
+                "mentality+рисование": "Провидец Апокалипсиса",
+                "mentality+музыка": "Жрец Культа Шепота",
+                "3д+монтаж": "Исказитель Реальности",
+                "здоровье+mentality": "Одержимый Выживший",
+                "музыка+сила клерка": "Клерк Мертвых Радиостанций",
+                "монтаж+сила клерка": "Цензор Проклятых Кассет",
+                "здоровье+монтаж": "Уцелевший Режиссер",
+                "здоровье+рисование": "Анатом Кошмаров",
+                "3д+сила клерка": "Архитектор Кабинетов Зла",
+                "3д+mentality": "Магистр Иных Сфер"
+            };
+
+            const primary = stats[0];
+            const secondary = stats.length > 1 ? stats[1] : null;
+
+            // Высчитываем ранг первого скилла (0-4)
+            const primaryLevel = Math.floor(primary.xp / 1000) + 1;
+            let tier = 0;
+            if (primaryLevel >= 3) tier = 1;
+            if (primaryLevel >= 6) tier = 2;
+            if (primaryLevel >= 10) tier = 3;
+            if (primaryLevel >= 15) tier = 4;
+
+            const pName = primary.name.toLowerCase().trim();
+            let mainTitle = titleTrees[pName] ? titleTrees[pName][tier] : "Неизвестная Сущность";
+
+            // Если второй скилл отстает не больше чем на 35% и опыта в принципе больше нуля — даем Гибрид
+            if (secondary && primary.xp > 0 && secondary.xp >= primary.xp * 0.65) {
+                const sName = secondary.name.toLowerCase().trim();
+                const comboKey = [pName, sName].sort().join("+");
+                
+                if (comboDict[comboKey]) {
+                    mainTitle = comboDict[comboKey];
+                }
+            }
+
+            return mainTitle;
+        }
+
         async function loadStats() {
             openScreen('statsScreen');
             const container = document.getElementById('statsListContent');
+            const titleBlock = document.getElementById('titleBlockContainer');
+            const playerTitle = document.getElementById('playerTitle');
+            
             container.innerHTML = '<p style="text-align:center;" class="blink-text">АНАЛИЗ ДУШИ...</p>';
-            lisaSpeak("Оцениваю ваше ментальное и физическое состояние...");
+            titleBlock.style.display = 'none';
+            lisaSpeak("Сканирую вашу сущность...");
 
             try {
                 const response = await fetch(`${N8N_GET_STATS_URL}?t=${Date.now()}`);
@@ -344,17 +415,32 @@
                     return;
                 }
 
+                // ВЫДАЕМ ЗВАНИЕ
+                const title = calculateTitle(stats);
+                playerTitle.innerText = `[ ${title} ]`;
+                titleBlock.style.display = 'block';
+
+                // РЕНДЕР СТАТОВ
                 stats.forEach(stat => {
-                    // RPG Система уровней: Каждые 1000 XP = 1 Level
-                    const level = Math.floor(stat.xp / 1000) + 1;
-                    const currentLevelXp = stat.xp % 1000;
-                    const percent = (currentLevelXp / 1000) * 100;
+                    let level = 1;
+                    let xpRequiredForNextLevel = 100; 
+                    let xpAccumulated = 0; 
+                    let totalXp = stat.xp;
+
+                    while (totalXp >= xpAccumulated + xpRequiredForNextLevel) {
+                        xpAccumulated += xpRequiredForNextLevel;
+                        level++;
+                        xpRequiredForNextLevel += 50; 
+                    }
+
+                    let currentLevelXp = totalXp - xpAccumulated;
+                    let percent = (currentLevelXp / xpRequiredForNextLevel) * 100;
 
                     container.innerHTML += `
                         <div class="stat-container">
                             <div class="stat-header">
                                 <span>${stat.name} <span class="stat-level">LVL ${level}</span></span>
-                                <span>${stat.xp} XP</span>
+                                <span style="font-size: 16px;">${currentLevelXp} / ${xpRequiredForNextLevel} XP</span>
                             </div>
                             <div class="stat-bar-bg">
                                 <div class="stat-bar-fill" style="width: ${percent}%;"></div>
@@ -362,7 +448,8 @@
                         </div>
                     `;
                 });
-                lisaSpeak("Жизненные показатели в норме. Пока что...");
+                
+                lisaSpeak("Анализ завершен. " + title + "...");
             } catch (e) {
                 container.innerHTML = `<p style="text-align:center; color:red;">[ СБОЙ БИОМЕТРИИ ]</p>`;
             }
