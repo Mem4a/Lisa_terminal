@@ -55,6 +55,7 @@
             padding: 5px 10px; cursor: pointer; z-index: 999;
             box-shadow: 3px 3px 0px rgba(0,0,0,0.5); transition: transform 0.05s;
         }
+        .sound-btn:active { transform: translate(2px, 2px); box-shadow: none; }
 
         .frame {
             border: var(--border-style); padding: 15px; width: 100%; max-width: 380px;
@@ -84,16 +85,19 @@
         .speech-bubble::after { content: ''; position: absolute; top: -14px; right: -10px; border-width: 0 0 15px 15px; border-style: solid; border-color: transparent transparent #000 transparent; }
         .speech-bubble::before { content: ''; position: absolute; top: -9px; right: -7px; border-width: 0 0 10px 10px; border-style: solid; border-color: transparent transparent #fff transparent; z-index: 1; }
 
-        button.menu-btn { width: 100%; background: #000; color: #fff; border: 2px solid #000; font-family: 'VT323', monospace; font-size: 22px; padding: 12px; margin: 6px 0; cursor: pointer; text-transform: uppercase; transition: transform 0.05s; position: relative; }
-        button.menu-btn:hover { background: #fff; color: #000; animation: textGlitch 0.3s steps(2) infinite; }
-        button.small-btn { font-size: 16px; padding: 6px; margin-top: 10px; background: #fff; color: #000; border: 2px dashed #000; }
-        button.small-btn:hover { background: #000; color: #fff; }
+        /* ИСПРАВЛЕННЫЕ КНОПКИ */
+        button.menu-btn { width: 100%; background: #000; color: #fff; border: 2px solid #000; font-family: 'VT323', monospace; font-size: 22px; padding: 12px; margin: 6px 0; cursor: pointer; text-transform: uppercase; transition: all 0.1s; position: relative; box-shadow: 4px 4px 0px rgba(0,0,0,0.3); }
+        button.menu-btn:active { background: #fff !important; color: #000 !important; transform: translate(3px, 3px); box-shadow: none; animation: textGlitch 0.2s steps(2) infinite; }
+        
+        button.small-btn { font-size: 16px; padding: 6px; margin-top: 10px; background: #fff; color: #000; border: 2px dashed #000; box-shadow: 2px 2px 0px rgba(0,0,0,0.3); }
+        button.small-btn:active { background: #000; color: #fff; transform: translate(2px, 2px); box-shadow: none; }
 
-        /* СПИСКИ */
         .task-item { border: 2px solid #000; padding: 10px; margin-bottom: 10px; background: #fff; box-shadow: 3px 3px 0px #000; display: flex; justify-content: space-between; align-items: center; }
         .task-name { font-size: 18px; font-weight: bold; line-height: 1.1; }
         .task-xp { font-size: 14px; background: #000; color: #fff; padding: 2px 5px; margin-top: 4px; display: inline-block; }
-        .complete-btn { background: #fff; color: #000; border: 2px solid #000; font-family: 'VT323', monospace; padding: 4px 8px; cursor: pointer; box-shadow: 2px 2px 0px #000; }
+        
+        .complete-btn { background: #fff; color: #000; border: 2px solid #000; font-family: 'VT323', monospace; padding: 4px 8px; cursor: pointer; box-shadow: 2px 2px 0px #000; transition: transform 0.1s; }
+        .complete-btn:active { transform: translate(2px, 2px); box-shadow: none; background: #000; color: #fff; }
 
         .stat-container { margin-bottom: 15px; }
         .stat-header { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; margin-bottom: 4px; }
@@ -105,10 +109,10 @@
         .title-label { font-size: 16px; color: #666; }
         .title-name { font-size: 24px; font-weight: bold; text-transform: uppercase; margin-top: 5px; animation: textGlitch 3s infinite; }
 
-        /* --- НОВЫЙ ДИЗАЙН ФОРМЫ (NEW INCIDENT) --- */
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 18px; color: #333; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
         
+        /* ИСПРАВЛЕННЫЕ ПОЛЯ ВВОДА (БЕЗ ЧЕРНОГО ФОНА) */
         input[type="text"], input[type="date"], select {
             width: 100%; box-sizing: border-box; border: 2px solid #000; padding: 10px;
             font-family: 'VT323', monospace; font-size: 20px; background: #fff; color: #000;
@@ -116,21 +120,23 @@
             box-shadow: 2px 2px 0px #000;
             transition: all 0.1s;
         }
+        
         input[type="text"]:focus, input[type="date"]:focus, select:focus {
-            background: #000; color: #fff; box-shadow: 4px 4px 0px #ff0000;
-            transform: translate(-2px, -2px);
+            border-color: var(--error-color); 
+            box-shadow: 4px 4px 0px var(--error-color);
+            background: #fff; /* Оставляем белым, чтобы курсор было видно */
+            color: #000;
         }
+        
         input[type="text"]::placeholder { color: #aaa; }
         
-        /* Кастомная стрелка селекта */
         .select-wrapper { position: relative; }
         .select-wrapper::after {
             content: '▼'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            pointer-events: none; font-size: 14px; color: #000;
+            pointer-events: none; font-size: 14px; color: #000; transition: color 0.1s;
         }
-        .select-wrapper:focus-within::after { color: #fff; }
+        .select-wrapper:focus-within::after { color: var(--error-color); }
 
-        /* Кнопки переключения XP */
         .xp-selector { display: flex; gap: 8px; }
         .xp-selector input[type="radio"] { display: none; }
         .xp-selector label {
