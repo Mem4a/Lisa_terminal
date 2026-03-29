@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Stamina: WOH Edition</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #e6e6e6; 
+            --text-color: #000000;
+            --border-style: 3px solid #000;
+        }
+
+        /* --- АНИМАЦИИ --- */
+        @keyframes textGlitch {
+            0% { transform: translate(0); text-shadow: none; }
+            25% { transform: translate(-2px, 1px); color: #ff0000; }
+            50% { transform: translate(2px, -1px); color: #0000ff; }
+            75% { transform: translate(-1px, -1px); color: #000000; }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes panelPulse {
+            0% { transform: scale(1); box-shadow: 4px 4px 0px #000; }
+            50% { transform: scale(1.02); box-shadow: 6px 6px 0px #000; }
+            100% { transform: scale(1); box-shadow: 4px 4px 0px #000; }
+        }
+
+        @keyframes ditherBoot {
+            from { opacity: 0; transform: translateY(5px); filter: contrast(200%); }
+            to { opacity: 1; transform: translateY(0); filter: contrast(100%); }
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSIyIiBoZWlnaHQ9IjIiIGZpbGw9IiMwMDAwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==');
+            padding-bottom: 80px;
+        }
+
+        .frame {
+            border: var(--border-style);
+            padding: 15px;
+            width: 100%;
+            max-width: 380px;
+            background: #fff;
+            box-shadow: 6px 6px 0px #000;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+            position: relative;
+            animation: ditherBoot 0.4s steps(4) ease-out;
+        }
+
+        .header-title {
+            font-size: 26px;
+            text-transform: uppercase;
+            border-bottom: var(--border-style);
+            margin-bottom: 15px;
+            text-align: center;
+            padding-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .manga-panel {
+            width: 100%;
+            height: 160px; 
+            border: var(--border-style);
+            margin: 0 auto 15px;
+            background: #000;
+            box-shadow: 4px 4px 0px #000;
+            overflow: hidden;
+            animation: panelPulse 4s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pixel-portrait {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: cover; 
+            image-rendering: pixelated; 
+            filter: grayscale(100%) contrast(120%);
+        }
+
+        button.menu-btn {
+            width: 100%;
+            background: #000;
+            color: #fff;
+            border: 2px solid #000;
+            font-family: 'VT323', monospace;
+            font-size: 22px;
+            padding: 12px;
+            margin: 6px 0;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: transform 0.05s;
+            position: relative;
+        }
+
+        button.menu-btn:hover {
+            background: #fff;
+            color: #000;
+            animation: textGlitch 0.3s steps(2) infinite;
+        }
+
+        button.menu-btn:active {
+            transform: translate(3px, 3px);
+            box-shadow: none;
+            animation: none;
+        }
+
+        label {
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            box-sizing: border-box;
+            border: 2px solid #000;
+            padding: 10px;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            background: #fff;
+            color: #000;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            background: #000;
+            color: #fff;
+        }
+
+        .hidden { display: none !important; }
+
+        .blink-text {
+            animation: blink 1.5s steps(2) infinite;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop>
+        <source src="https://files.catbox.moe/nnp5ww.mp3" type="audio/mpeg">
+    </audio>
+
+    <div id="loaderScreen" class="frame" style="cursor: pointer;" onclick="bootSystem()">
+        <div class="header-title">SYSTEM BOOT</div>
+        <p style="text-align:center; font-size: 20px; margin-top: 30px;" class="blink-text">[ НАЖМИ НА ЭКРАН ДЛЯ ЗАПУСКА ]</p>
+    </div>
+
+    <div id="mainMenuScreen" class="frame hidden">
+        <div class="manga-panel">
+            <img src="https://www.stridepr.com/wp-content/uploads/2023/10/WORLD-OF-HORROR-v1.0-Launch-Trailer-0-55-screenshot-360x240.png" alt="WOH Scene" class="pixel-portrait">
+        </div>
+
+        <div class="header-title">LISA TERMINAL</div>
+        <p style="text-align: center; font-size: 18px; font-weight: bold;">Система активна. Ожидаю.</p>
+
+        <button class="menu-btn" onclick="openScreen('createTaskScreen')">[+] Создать Квест</button>
+        <button class="menu-btn" onclick="alert('Открываю список...')">[=] Задачи</button>
+    </div>
+
+    <div id="createTaskScreen" class="frame hidden">
+        <div class="header-title">NEW QUEST</div>
+        
+        <label>Название квеста</label>
+        <input type="text" id="taskName" placeholder="Изгнать прокрастинацию...">
+        
+        <label>Характеристика</label>
+        <select id="taskStat">
+            <option value="19ce1807-5ea9-8096-96bd-ce6d6f1c6944">🤓 Сила Клерка</option>
+            <option value="19ce1807-5ea9-8033-96d6-e68cba9370fc">🫁 Здоровье</option>
+            <option value="19ce1807-5ea9-80b2-89df-f78ce08cbb8a">📻 Музыка</option>
+            <option value="19ce1807-5ea9-80ac-80ea-f8a186b375e9">👺 Рисование</option>
+            <option value="19ce1807-5ea9-8064-99c1-c360929869e9">👽 3Д</option>
+            <option value="19ce1807-5ea9-80f2-9009-fb37181d34af">🕵️‍♂️ Монтаж</option>
+            <option value="19ee1807-5ea9-800c-ba78-e54ede7dac9a">🕎 Mentality</option>
+        </select>
+
+        <label>Сложность (XP)</label>
+        <select id="taskXP">
+            <option value="15">15 XP (Легко)</option>
+            <option value="30">30 XP (Средне)</option>
+            <option value="50">50 XP (Хардкор)</option>
+        </select>
+
+        <label>Дата выполнения</label>
+        <input type="date" id="taskDate">
+        
+        <button id="browserSubmitBtn" class="menu-btn" style="margin-top: 20px; background: #fff; color: #000;" onclick="submitTask()">[ ОТПРАВИТЬ В БАЗУ ]</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.setHeaderColor('#e6e6e6'); 
+        tg.setBackgroundColor('#e6e6e6');
+
+        const N8N_WEBHOOK_URL = 'https://твой-сервер.n8n/webhook/stamina-create-task';
+
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('taskDate').value = today;
+
+        function bootSystem() {
+            const audio = document.getElementById('bgMusic');
+            audio.volume = 0.5; 
+            audio.play().catch(e => console.log("Браузер заблокировал аудио:", e));
+            
+            openScreen('mainMenuScreen');
+        }
+
+        function openScreen(screenId) {
+            document.querySelectorAll('.frame').forEach(el => el.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+
+            if (screenId === 'loaderScreen' || screenId === 'mainMenuScreen') {
+                tg.BackButton.hide();
+                tg.MainButton.hide();
+            } else {
+                tg.BackButton.show();
+                tg.BackButton.onClick(() => openScreen('mainMenuScreen'));
+                
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    document.getElementById('browserSubmitBtn').style.display = 'none';
+                    if (screenId === 'createTaskScreen') {
+                        tg.MainButton.setText("ЗАПИСАТЬ В БОРТЖУРНАЛ");
+                        tg.MainButton.setParams({ color: '#000000', text_color: '#ffffff' });
+                        tg.MainButton.show();
+                        tg.MainButton.onClick(submitTask);
+                    }
+                }
+            }
+        }
+
+        async function submitTask() {
+            const payload = {
+                intent: 'create_task',
+                task_name: document.getElementById('taskName').value,
+                stat_id: document.getElementById('taskStat').value,
+                xp: parseInt(document.getElementById('taskXP').value),
+                date: document.getElementById('taskDate').value,
+                user_tg_id: tg.initDataUnsafe?.user?.id || 123456789 
+            };
+
+            if (!payload.task_name) {
+                alert("Имя квеста не может быть пустым!");
+                return;
+            }
+
+            if (tg.MainButton.isVisible) tg.MainButton.showProgress();
+            
+            try {
+                // Имитация успешной отправки для локального теста
+                setTimeout(() => {
+                    alert("Успех! Данные сформированы.");
+                    document.getElementById('taskName').value = '';
+                    openScreen('mainMenuScreen');
+                    if (tg.MainButton.isVisible) tg.MainButton.hideProgress();
+                }, 500);
+
+            } catch (error) {
+                alert("Ошибка сети.");
+            }
+        }
+    </script>
+</body>
+</html>
