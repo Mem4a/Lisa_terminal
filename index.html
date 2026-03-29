@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v14 (Titles & Classes)</title>
+    <title>Stamina: WOH Edition v15 (Codex)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -81,17 +81,13 @@
             bottom: 15px; left: 15px;  
         }
 
-        .speech-bubble::after {
-            content: ''; position: absolute; top: -14px; right: -10px; 
-            border-width: 0 0 15px 15px; border-style: solid; border-color: transparent transparent #000 transparent;
-        }
-        .speech-bubble::before {
-            content: ''; position: absolute; top: -9px; right: -7px;
-            border-width: 0 0 10px 10px; border-style: solid; border-color: transparent transparent #fff transparent; z-index: 1;
-        }
+        .speech-bubble::after { content: ''; position: absolute; top: -14px; right: -10px; border-width: 0 0 15px 15px; border-style: solid; border-color: transparent transparent #000 transparent; }
+        .speech-bubble::before { content: ''; position: absolute; top: -9px; right: -7px; border-width: 0 0 10px 10px; border-style: solid; border-color: transparent transparent #fff transparent; z-index: 1; }
 
         button.menu-btn { width: 100%; background: #000; color: #fff; border: 2px solid #000; font-family: 'VT323', monospace; font-size: 22px; padding: 12px; margin: 6px 0; cursor: pointer; text-transform: uppercase; transition: transform 0.05s; position: relative; }
         button.menu-btn:hover { background: #fff; color: #000; animation: textGlitch 0.3s steps(2) infinite; }
+        button.small-btn { font-size: 16px; padding: 6px; margin-top: 10px; background: #fff; color: #000; border: 2px dashed #000; }
+        button.small-btn:hover { background: #000; color: #fff; }
 
         .task-item { border: 2px solid #000; padding: 10px; margin-bottom: 10px; background: #fff; box-shadow: 3px 3px 0px #000; display: flex; justify-content: space-between; align-items: center; }
         .task-name { font-size: 18px; font-weight: bold; line-height: 1.1; }
@@ -104,10 +100,15 @@
         .stat-bar-fill { height: 100%; background: #000; transition: width 0.5s ease-out; }
         .stat-level { font-size: 14px; color: #666; }
 
-        /* СТИЛЬ ДЛЯ ЗВАНИЯ */
         .title-block { border: 2px dashed #000; padding: 10px; margin-bottom: 20px; text-align: center; background: #f9f9f9; }
         .title-label { font-size: 16px; color: #666; }
         .title-name { font-size: 24px; font-weight: bold; text-transform: uppercase; margin-top: 5px; animation: textGlitch 3s infinite; }
+
+        /* СТИЛИ ДЛЯ КОДЕКСА */
+        .codex-section { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dotted #ccc; }
+        .codex-h { font-size: 18px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
+        .codex-p { font-size: 16px; line-height: 1.2; margin: 0 0 5px 0; }
+        .highlight { background: #000; color: #fff; padding: 0 4px; }
 
         .hidden { display: none !important; }
         .blink-text { animation: blink 1.5s steps(2) infinite; cursor: pointer; }
@@ -179,8 +180,14 @@
         <div class="title-block" id="titleBlockContainer" style="display: none;">
             <div class="title-label">Ваш текущий профиль:</div>
             <div class="title-name" id="playerTitle">АНАЛИЗ...</div>
+            <button class="menu-btn small-btn" onclick="openCodex()">[ РАСШИФРОВАТЬ ГЕНОМ ]</button>
         </div>
         <div id="statsListContent"></div>
+    </div>
+
+    <div id="codexScreen" class="frame hidden">
+        <div class="header-title">GENOME CODEX</div>
+        <div id="codexContent"></div>
     </div>
 
     <script>
@@ -197,6 +204,14 @@
         document.getElementById('taskDate').value = today;
 
         let typeWriterTimeout;
+        let globalStatsData = []; // Храним стату для Кодекса
+        let backTarget = 'mainMenuScreen'; // Куда возвращаться
+
+        // НАСТРОЙКА КНОПКИ НАЗАД ДЛЯ МНОГОУРОВНЕВОСТИ
+        tg.BackButton.onClick(() => {
+            if(backTarget === 'statsScreen') loadStats();
+            else openScreen(backTarget);
+        });
 
         function lisaSpeak(text) {
             const bubble = document.getElementById('lisaBubble');
@@ -208,7 +223,7 @@
                 if (i < text.length) {
                     bubble.innerHTML += text.charAt(i);
                     i++;
-                    typeWriterTimeout = setTimeout(typeWriter, 35);
+                    typeWriterTimeout = setTimeout(typeWriter, 30);
                 }
             }
             typeWriter();
@@ -223,10 +238,8 @@
         async function authenticate() {
             const audio = document.getElementById('bgMusic');
             audio.play().catch(e => {});
-            
             const statusText = document.getElementById('loaderStatus');
             statusText.innerText = "СВЕРКА ПЕЧАТЕЙ...";
-            statusText.style.animation = "textGlitch 0.2s infinite";
 
             let tgId = tg.initDataUnsafe?.user?.id || 1211686949; 
 
@@ -245,22 +258,17 @@
                 } else {
                     openScreen('accessDeniedScreen');
                 }
-            } catch (e) {
-                statusText.innerText = "[ ОШИБКА СЕРВЕРА ]";
-            }
+            } catch (e) { statusText.innerText = "[ ОШИБКА СЕРВЕРА ]"; }
         }
 
-        function openScreen(screenId) {
+        function openScreen(screenId, target = 'mainMenuScreen') {
+            backTarget = target;
             document.querySelectorAll('.frame').forEach(el => el.classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
             document.getElementById('lisaBubble').classList.add('hidden');
             
-            if (screenId !== 'mainMenuScreen') {
-                tg.BackButton.show();
-                tg.BackButton.onClick(() => openScreen('mainMenuScreen'));
-            } else {
-                tg.BackButton.hide();
-            }
+            if (screenId !== 'mainMenuScreen') tg.BackButton.show();
+            else tg.BackButton.hide();
 
             if (screenId === 'createTaskScreen' && tg.initDataUnsafe?.user) {
                 tg.MainButton.setText("ЗАНЕСТИ В АРХИВ");
@@ -289,23 +297,18 @@
                 document.getElementById('taskName').value = '';
                 openScreen('mainMenuScreen');
                 setTimeout(() => lisaSpeak("Инцидент зафиксирован во тьме..."), 500);
-            } finally {
-                tg.MainButton.hideProgress();
-            }
+            } finally { tg.MainButton.hideProgress(); }
         }
 
         async function loadTasks() {
             openScreen('viewTasksScreen');
             const container = document.getElementById('taskListContent');
             container.innerHTML = '<p style="text-align:center;" class="blink-text">ЧТЕНИЕ СВИТКОВ...</p>';
-            lisaSpeak("Ищу активные инциденты...");
             try {
                 const response = await fetch(`${N8N_GET_TASKS_URL}?t=${Date.now()}`);
                 const rawData = await response.json();
                 const tasks = Array.isArray(rawData) ? rawData : (rawData.tasks || []);
-                
                 container.innerHTML = tasks.length ? '' : '<p style="text-align:center; padding: 20px;">ИНЦИДЕНТОВ НЕТ. ТИШИНА.</p>';
-                
                 tasks.forEach(task => {
                     container.innerHTML += `
                         <div class="task-item" id="task-${task.id}">
@@ -316,7 +319,6 @@
                             <button class="complete-btn" onclick="completeTask('${task.id}', this)">[ ИЗГНАТЬ ]</button>
                         </div>`;
                 });
-                if(tasks.length > 0) lisaSpeak(`Обнаружено ${tasks.length} инцидентов.`);
             } catch (e) { container.innerHTML = `<p style="text-align:center; color:red;">[ ОШИБКА СВЯЗИ ]</p>`; }
         }
 
@@ -334,113 +336,82 @@
             } catch (e) { btn.innerText = '[ ОШИБКА ]'; }
         }
 
-        // --- ЛОГИКА ГЕНЕРАЦИИ ЗВАНИЙ (WOH THEME) ---
-        function calculateTitle(stats) {
-            if (!stats || stats.length === 0) return "Обреченный";
+        // БАЗЫ ЗВАНИЙ (ДЛЯ РАСЧЕТОВ)
+        const titleTrees = {
+            "сила клерка": ["Офисная Жертва", "Младший Детектив", "Архивариус Ужаса", "Куратор Запретного", "Жрец Бюрократии"],
+            "здоровье": ["Хрупкий Сосуд", "Выживший в Шиокаве", "Искатель Истины", "Закаленный Мраком", "Бессмертный Упырь"],
+            "музыка": ["Слушатель Помех", "Ловец Мертвых Частот", "Композитор Кошмаров", "Дирижер Ритуалов", "Голос Древних"],
+            "рисование": ["Маратель Бумаги", "Зарисовщик Теней", "Художник Скверны", "Творец Проклятых Гравюр", "Око Богов"],
+            "3д": ["Скульптор Глины", "Исказитель Форм", "Ткач Полигонов", "Архитектор Неевклидова Мира", "Владыка Измерений"],
+            "монтаж": ["Смотритель Кассет", "Склейщик Пленок", "Монтажер Снаффа", "Иллюзионист Хроники", "Властелин 25-го Кадра"],
+            "mentality": ["Параноик", "Исследователь Аномалий", "Оккультист", "Знаток Некрономикона", "Пробудивший Древних"]
+        };
+        const comboDict = {
+            "mentality+сила клерка": "Безумный Архивариус", "здоровье+сила клерка": "Неутомимый Детектив", "3д+рисование": "Творец Плоти",
+            "монтаж+музыка": "Режиссер Радиопомех", "mentality+рисование": "Провидец Апокалипсиса", "mentality+музыка": "Жрец Культа Шепота",
+            "3д+монтаж": "Исказитель Реальности", "здоровье+mentality": "Одержимый Выживший", "музыка+сила клерка": "Клерк Мертвых Радиостанций",
+            "монтаж+сила клерка": "Цензор Проклятых Кассет", "здоровье+монтаж": "Уцелевший Режиссер", "здоровье+рисование": "Анатом Кошмаров",
+            "3д+сила клерка": "Архитектор Кабинетов Зла", "3д+mentality": "Магистр Иных Сфер"
+        };
+        const tierLevels = [1, 3, 6, 10, 15]; // Уровни для переходов базы
 
-            // Ранги по статам (1-2 лвл, 3-5 лвл, 6-9 лвл, 10-14 лвл, 15+ лвл)
-            const titleTrees = {
-                "сила клерка": ["Офисная Жертва", "Младший Детектив", "Архивариус Ужаса", "Куратор Запретного", "Жрец Бюрократии"],
-                "здоровье": ["Хрупкий Сосуд", "Выживший в Шиокаве", "Искатель Истины", "Закаленный Мраком", "Бессмертный Упырь"],
-                "музыка": ["Слушатель Помех", "Ловец Мертвых Частот", "Композитор Кошмаров", "Дирижер Ритуалов", "Голос Древних"],
-                "рисование": ["Маратель Бумаги", "Зарисовщик Теней", "Художник Скверны", "Творец Проклятых Гравюр", "Око Богов"],
-                "3д": ["Скульптор Глины", "Исказитель Форм", "Ткач Полигонов", "Архитектор Неевклидова Мира", "Владыка Измерений"],
-                "монтаж": ["Смотритель Кассет", "Склейщик Пленок", "Монтажер Снаффа", "Иллюзионист Хроники", "Властелин 25-го Кадра"],
-                "mentality": ["Параноик", "Исследователь Аномалий", "Оккультист", "Знаток Некрономикона", "Пробудивший Древних"]
-            };
-
-            // Гибридные классы (Секретные звания)
-            const comboDict = {
-                "mentality+сила клерка": "Безумный Архивариус",
-                "здоровье+сила клерка": "Неутомимый Детектив",
-                "3д+рисование": "Творец Плоти",
-                "монтаж+музыка": "Режиссер Радиопомех",
-                "mentality+рисование": "Провидец Апокалипсиса",
-                "mentality+музыка": "Жрец Культа Шепота",
-                "3д+монтаж": "Исказитель Реальности",
-                "здоровье+mentality": "Одержимый Выживший",
-                "музыка+сила клерка": "Клерк Мертвых Радиостанций",
-                "монтаж+сила клерка": "Цензор Проклятых Кассет",
-                "здоровье+монтаж": "Уцелевший Режиссер",
-                "здоровье+рисование": "Анатом Кошмаров",
-                "3д+сила клерка": "Архитектор Кабинетов Зла",
-                "3д+mentality": "Магистр Иных Сфер"
-            };
-
-            const primary = stats[0];
-            const secondary = stats.length > 1 ? stats[1] : null;
-
-            // Высчитываем ранг первого скилла (0-4)
-            const primaryLevel = Math.floor(primary.xp / 1000) + 1;
-            let tier = 0;
-            if (primaryLevel >= 3) tier = 1;
-            if (primaryLevel >= 6) tier = 2;
-            if (primaryLevel >= 10) tier = 3;
-            if (primaryLevel >= 15) tier = 4;
-
-            const pName = primary.name.toLowerCase().trim();
-            let mainTitle = titleTrees[pName] ? titleTrees[pName][tier] : "Неизвестная Сущность";
-
-            // Если второй скилл отстает не больше чем на 35% и опыта в принципе больше нуля — даем Гибрид
-            if (secondary && primary.xp > 0 && secondary.xp >= primary.xp * 0.65) {
-                const sName = secondary.name.toLowerCase().trim();
-                const comboKey = [pName, sName].sort().join("+");
-                
-                if (comboDict[comboKey]) {
-                    mainTitle = comboDict[comboKey];
-                }
-            }
-
-            return mainTitle;
+        function calcLvl(xp) {
+            let level = 1;
+            let req = 100; 
+            let acc = 0; 
+            while (xp >= acc + req) { acc += req; level++; req += 50; }
+            return level;
         }
 
         async function loadStats() {
             openScreen('statsScreen');
             const container = document.getElementById('statsListContent');
             const titleBlock = document.getElementById('titleBlockContainer');
-            const playerTitle = document.getElementById('playerTitle');
             
             container.innerHTML = '<p style="text-align:center;" class="blink-text">АНАЛИЗ ДУШИ...</p>';
             titleBlock.style.display = 'none';
-            lisaSpeak("Сканирую вашу сущность...");
 
             try {
                 const response = await fetch(`${N8N_GET_STATS_URL}?t=${Date.now()}`);
                 const rawData = await response.json();
-                const stats = Array.isArray(rawData) ? rawData : (rawData.stats || []);
+                globalStatsData = Array.isArray(rawData) ? rawData : (rawData.stats || []);
 
                 container.innerHTML = '';
-                if(stats.length === 0) {
+                if(globalStatsData.length === 0) {
                     container.innerHTML = '<p style="text-align:center;">Данные о сущности не найдены.</p>';
                     return;
                 }
 
-                // ВЫДАЕМ ЗВАНИЕ
-                const title = calculateTitle(stats);
-                playerTitle.innerText = `[ ${title} ]`;
+                // РАСЧЕТ ТЕКУЩЕГО ЗВАНИЯ
+                const p = globalStatsData[0];
+                const s = globalStatsData.length > 1 ? globalStatsData[1] : null;
+                const pLvl = calcLvl(p.xp);
+                let tier = 0;
+                if (pLvl >= 3) tier = 1; if (pLvl >= 6) tier = 2; if (pLvl >= 10) tier = 3; if (pLvl >= 15) tier = 4;
+                
+                let pName = p.name.toLowerCase().trim();
+                let title = titleTrees[pName] ? titleTrees[pName][tier] : "Неизвестная Сущность";
+
+                if (s && p.xp > 0 && s.xp >= p.xp * 0.65) {
+                    let sName = s.name.toLowerCase().trim();
+                    let comboKey = [pName, sName].sort().join("+");
+                    if (comboDict[comboKey]) title = comboDict[comboKey];
+                }
+
+                document.getElementById('playerTitle').innerText = `[ ${title} ]`;
                 titleBlock.style.display = 'block';
 
-                // РЕНДЕР СТАТОВ
-                stats.forEach(stat => {
-                    let level = 1;
-                    let xpRequiredForNextLevel = 100; 
-                    let xpAccumulated = 0; 
-                    let totalXp = stat.xp;
-
-                    while (totalXp >= xpAccumulated + xpRequiredForNextLevel) {
-                        xpAccumulated += xpRequiredForNextLevel;
-                        level++;
-                        xpRequiredForNextLevel += 50; 
-                    }
-
-                    let currentLevelXp = totalXp - xpAccumulated;
-                    let percent = (currentLevelXp / xpRequiredForNextLevel) * 100;
+                globalStatsData.forEach(stat => {
+                    let level = 1, req = 100, acc = 0;
+                    while (stat.xp >= acc + req) { acc += req; level++; req += 50; }
+                    let currXp = stat.xp - acc;
+                    let percent = (currXp / req) * 100;
 
                     container.innerHTML += `
                         <div class="stat-container">
                             <div class="stat-header">
                                 <span>${stat.name} <span class="stat-level">LVL ${level}</span></span>
-                                <span style="font-size: 16px;">${currentLevelXp} / ${xpRequiredForNextLevel} XP</span>
+                                <span style="font-size: 16px;">${currXp} / ${req} XP</span>
                             </div>
                             <div class="stat-bar-bg">
                                 <div class="stat-bar-fill" style="width: ${percent}%;"></div>
@@ -448,11 +419,86 @@
                         </div>
                     `;
                 });
-                
-                lisaSpeak("Анализ завершен. " + title + "...");
-            } catch (e) {
-                container.innerHTML = `<p style="text-align:center; color:red;">[ СБОЙ БИОМЕТРИИ ]</p>`;
+            } catch (e) { container.innerHTML = `<p style="text-align:center; color:red;">[ СБОЙ БИОМЕТРИИ ]</p>`; }
+        }
+
+        // --- ЛОГИКА КОДЕКСА (ЭКРАН РАСШИФРОВКИ) ---
+        function openCodex() {
+            openScreen('codexScreen', 'statsScreen');
+            const container = document.getElementById('codexContent');
+            
+            if (globalStatsData.length === 0) {
+                container.innerHTML = '<p>Нет данных для анализа.</p>'; return;
             }
+
+            const p = globalStatsData[0];
+            const s = globalStatsData.length > 1 ? globalStatsData[1] : null;
+            const pLvl = calcLvl(p.xp);
+            
+            let tier = 0;
+            if (pLvl >= 3) tier = 1; if (pLvl >= 6) tier = 2; if (pLvl >= 10) tier = 3; if (pLvl >= 15) tier = 4;
+            
+            const pName = p.name.toLowerCase().trim();
+            const basePath = titleTrees[pName] || [];
+            
+            let isHybrid = false;
+            let hybridName = "";
+            let sNameRaw = s ? s.name.toLowerCase().trim() : "";
+            
+            if (s && p.xp > 0 && s.xp >= p.xp * 0.65) {
+                let comboKey = [pName, sNameRaw].sort().join("+");
+                if (comboDict[comboKey]) {
+                    isHybrid = true;
+                    hybridName = comboDict[comboKey];
+                }
+            }
+
+            let html = `
+                <div class="codex-section">
+                    <div class="codex-h">ДОМИНАНТА РАЗУМА</div>
+                    <p class="codex-p">Твой основной вектор развития — <span class="highlight">${p.name}</span> (Уровень ${pLvl}). Это диктует твою первородную форму.</p>
+                </div>
+            `;
+
+            if (isHybrid) {
+                html += `
+                <div class="codex-section">
+                    <div class="codex-h">МУТАЦИЯ: АКТИВНА</div>
+                    <p class="codex-p">Влияние <span class="highlight">${s.name}</span> достаточно велико (более 65% от основы), чтобы запустить синтез. Ваша сущность эволюционировала в гибрид.</p>
+                </div>`;
+            } else {
+                html += `
+                <div class="codex-section">
+                    <div class="codex-h">МУТАЦИЯ: СПЯЩИЙ ГЕН</div>
+                    <p class="codex-p">Ваши второстепенные навыки слишком слабы, чтобы образовать синтез с доминантой.</p>
+                </div>`;
+            }
+
+            // ПУТЬ БАЗОВОЙ ЭВОЛЮЦИИ
+            let nextLevelReq = tier < 4 ? tierLevels[tier + 1] : "MAX";
+            let nextTitle = tier < 4 ? basePath[tier + 1] : "АБСОЛЮТ";
+            
+            html += `
+                <div class="codex-section">
+                    <div class="codex-h">ВЕКТОР ЭВОЛЮЦИИ</div>
+                    <p class="codex-p">Чтобы перейти на следующую ступень базового пути, вам нужен <span class="highlight">УРОВЕНЬ ${nextLevelReq}</span> в навыке <b>${p.name}</b>.</p>
+                    <p class="codex-p">Грядущая форма: <b>[ ${nextTitle} ]</b></p>
+                </div>
+            `;
+
+            // ПУТЬ СИНТЕЗА (ГИБРИДЫ)
+            let reqXp = Math.floor(p.xp * 0.65);
+            html += `<div class="codex-section"><div class="codex-h">ВЕКТОР СИНТЕЗА</div>`;
+            
+            if (isHybrid) {
+                html += `<p class="codex-p">Чтобы удержать гибридную форму, поддерживайте <b>${s.name}</b> не ниже <span class="highlight">${reqXp} XP</span>. Если Доминанта вырвется далеко вперед, связь распадется.</p>`;
+            } else if (s) {
+                let xpShort = reqXp - s.xp;
+                html += `<p class="codex-p">Ближайший катализатор мутации — <b>${s.name}</b>. Наберите еще <span class="highlight">${xpShort} XP</span> в этой характеристике, чтобы открыть секретный гибридный класс.</p>`;
+            }
+            html += `</div>`;
+
+            container.innerHTML = html;
         }
     </script>
 </body>
