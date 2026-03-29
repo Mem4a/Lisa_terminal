@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v9 (Voice)</title>
+    <title>Stamina: WOH Edition v10 (Tasks Viewer)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -72,46 +72,28 @@
             margin: 0 auto 15px; background: #000; box-shadow: 4px 4px 0px #000;
             overflow: hidden; animation: panelPulse 4s ease-in-out infinite;
             display: flex; align-items: center; justify-content: center;
-            position: relative; /* ВАЖНО ДЛЯ БАБЛА */
+            position: relative; 
         }
 
         .pixel-portrait { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; filter: grayscale(100%) contrast(120%); }
 
-       /* --- БАБЛ ЛИЗЫ (Адаптирован: голова справа сверху) --- */
         .speech-bubble {
-            position: absolute;
-            background: #fff;
-            color: #000;
-            border: 2px solid #000;
-            padding: 8px 12px;
-            font-family: 'VT323', monospace;
-            font-size: 16px;
-            line-height: 1.1;
-            max-width: 140px;
-            z-index: 10;
-            box-shadow: 3px 3px 0px #000;
-            
-            /* Бабл теперь живет в левом НИЖНЕМ углу */
-            bottom: 15px;   
-            left: 15px;  
+            position: absolute; background: #fff; color: #000; border: 2px solid #000;
+            padding: 8px 12px; font-family: 'VT323', monospace; font-size: 16px;
+            line-height: 1.1; max-width: 140px; z-index: 10; box-shadow: 3px 3px 0px #000;
+            bottom: 15px; left: 15px;  
         }
 
-        /* Хвостик указывает ВВЕРХ и ВПРАВО (к лицу Лизы) */
         .speech-bubble::after {
             content: ''; position: absolute;
-            top: -14px; right: -10px; /* Выходит из правого верхнего угла */
-            border-width: 0 0 15px 15px; 
-            border-style: solid; 
-            border-color: transparent transparent #000 transparent;
+            top: -14px; right: -10px; 
+            border-width: 0 0 15px 15px; border-style: solid; border-color: transparent transparent #000 transparent;
         }
         
         .speech-bubble::before {
             content: ''; position: absolute;
             top: -9px; right: -7px;
-            border-width: 0 0 10px 10px; 
-            border-style: solid; 
-            border-color: transparent transparent #fff transparent; 
-            z-index: 1;
+            border-width: 0 0 10px 10px; border-style: solid; border-color: transparent transparent #fff transparent; z-index: 1;
         }
 
         button.menu-btn { width: 100%; background: #000; color: #fff; border: 2px solid #000; font-family: 'VT323', monospace; font-size: 22px; padding: 12px; margin: 6px 0; cursor: pointer; text-transform: uppercase; transition: transform 0.05s; position: relative; }
@@ -120,6 +102,21 @@
         label { display: block; margin-top: 10px; margin-bottom: 5px; font-size: 20px; font-weight: bold; }
         input, select { width: 100%; box-sizing: border-box; border: 2px solid #000; padding: 10px; font-family: 'VT323', monospace; font-size: 18px; background: #fff; color: #000; outline: none; }
         input:focus, select:focus { background: #000; color: #fff; }
+        
+        /* Стили для списка задач */
+        .task-item {
+            border: 2px solid #000;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            box-shadow: 3px 3px 0px #000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-name { font-size: 18px; font-weight: bold; }
+        .task-xp { font-size: 16px; background: #000; color: #fff; padding: 2px 6px; }
+
         .hidden { display: none !important; }
         .blink-text { animation: blink 1.5s steps(2) infinite; cursor: pointer; }
     </style>
@@ -153,7 +150,7 @@
         <p style="text-align: center; font-size: 18px; font-weight: bold;">Добро пожаловать, <span id="userName">Семпай</span>.</p>
 
         <button class="menu-btn" onclick="openScreen('createTaskScreen')">[+] Создать Квест</button>
-        <button class="menu-btn" onclick="lisaSpeak('Опция пока недоступна, Семпай!')">[=] Задачи</button>
+        <button class="menu-btn" onclick="loadTasks()">[=] Активные Задачи</button>
     </div>
 
     <div id="createTaskScreen" class="frame hidden">
@@ -181,6 +178,13 @@
         <button id="browserSubmitBtn" class="menu-btn" style="margin-top: 20px; background: #fff; color: #000;" onclick="submitTask()">[ ОТПРАВИТЬ В БАЗУ ]</button>
     </div>
 
+    <div id="viewTasksScreen" class="frame hidden">
+        <div class="header-title">ACTIVE QUESTS</div>
+        <div id="taskListContent" style="min-height: 100px;">
+            <p style="text-align:center; margin-top: 20px;" class="blink-text">Загрузка данных из Базы...</p>
+        </div>
+    </div>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
@@ -188,7 +192,9 @@
         tg.setBackgroundColor('#e6e6e6');
 
         const AUTH_WEBHOOK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/b0607fcb-775f-466e-8f2d-cc3b81fb632e'; 
-        const N8N_WEBHOOK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/ba753654-0bcf-44b6-bd2f-299a6a5b389f';
+        const N8N_CREATE_TASK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/ba753654-0bcf-44b6-bd2f-299a6a5b389f';
+        // НОВЫЙ ВЕБХУК ДЛЯ ПОЛУЧЕНИЯ ЗАДАЧ
+        const N8N_GET_TASKS_URL = 'https://n8n.nevn8n8amocrm.online/webhook/stamina-get-tasks';
 
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('taskDate').value = today;
@@ -196,7 +202,6 @@
         let currentUser = null; 
         let typeWriterTimeout;
 
-        // ФУНКЦИЯ "ЛИЗА ГОВОРИТ"
         function lisaSpeak(text) {
             const bubble = document.getElementById('lisaBubble');
             bubble.classList.remove('hidden');
@@ -208,7 +213,7 @@
                 if (i < text.length) {
                     bubble.innerHTML += text.charAt(i);
                     i++;
-                    typeWriterTimeout = setTimeout(typeWriter, 30); // Скорость печати
+                    typeWriterTimeout = setTimeout(typeWriter, 30); 
                 }
             }
             typeWriter();
@@ -249,8 +254,7 @@
                     if (data.name) document.getElementById('userName').innerText = data.name;
                     openScreen('mainMenuScreen'); 
                     document.getElementById('soundToggleBtn').classList.remove('hidden');
-                    // ЛИЗА ЗДОРОВАЕТСЯ
-                    setTimeout(() => lisaSpeak(`С возвращением в систему, ${data.name || "Семпай"}.`), 500);
+                    setTimeout(() => lisaSpeak(`С возвращением, ${data.name || "Семпай"}. База данных обновлена.`), 500);
                 } else {
                     openScreen('accessDeniedScreen'); 
                 }
@@ -263,7 +267,7 @@
         function openScreen(screenId) {
             document.querySelectorAll('.frame').forEach(el => el.classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
-            document.getElementById('lisaBubble').classList.add('hidden'); // Скрываем бабл при смене экрана
+            document.getElementById('lisaBubble').classList.add('hidden'); 
 
             if (screenId === 'loaderScreen' || screenId === 'mainMenuScreen' || screenId === 'accessDeniedScreen') {
                 tg.BackButton.hide();
@@ -279,6 +283,8 @@
                         tg.MainButton.setParams({ color: '#000000', text_color: '#ffffff' });
                         tg.MainButton.show();
                         tg.MainButton.onClick(submitTask);
+                    } else if (screenId === 'viewTasksScreen') {
+                        tg.MainButton.hide();
                     }
                 }
             }
@@ -302,7 +308,7 @@
             if (tg.MainButton.isVisible) tg.MainButton.showProgress();
             
             try {
-                const response = await fetch(N8N_WEBHOOK_URL, {
+                const response = await fetch(N8N_CREATE_TASK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -311,18 +317,49 @@
                 if (response.ok) {
                     document.getElementById('taskName').value = '';
                     openScreen('mainMenuScreen');
-                    // ЛИЗА ПОДТВЕРЖДАЕТ
-                    setTimeout(() => lisaSpeak("Квест занесен в базу! (o^▽^o)"), 500);
+                    setTimeout(() => lisaSpeak("Квест успешно занесен в базу! (o^▽^o)"), 500);
                 } else {
-                    const errMsg = "Ошибка при записи в n8n!";
-                    tg.showAlert ? tg.showAlert(errMsg) : alert(errMsg);
+                    tg.showAlert ? tg.showAlert("Ошибка при записи в n8n!") : alert("Ошибка при записи!");
                 }
-
             } catch (error) {
-                const errMsg = "Ошибка сети.";
-                tg.showAlert ? tg.showAlert(errMsg) : alert(errMsg);
+                tg.showAlert ? tg.showAlert("Ошибка сети.") : alert("Ошибка сети.");
             } finally {
                 if (tg.MainButton.isVisible) tg.MainButton.hideProgress();
+            }
+        }
+
+        // --- НОВАЯ ФУНКЦИЯ ЗАГРУЗКИ ЗАДАЧ ---
+        async function loadTasks() {
+            openScreen('viewTasksScreen');
+            const container = document.getElementById('taskListContent');
+            container.innerHTML = '<p style="text-align:center; margin-top: 20px;" class="blink-text">Получение данных...</p>';
+
+            try {
+                // Вызываем GET вебхук в n8n
+                const response = await fetch(N8N_GET_TASKS_URL, { method: 'GET' });
+                
+                if (!response.ok) throw new Error("Ошибка сервера");
+                
+                const tasks = await response.json();
+
+                if (tasks.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; font-weight: bold; margin-top: 20px;">Активных квестов нет! Можно отдыхать.</p>';
+                    return;
+                }
+
+                container.innerHTML = ''; // Очищаем
+                tasks.forEach(task => {
+                    container.innerHTML += `
+                        <div class="task-item">
+                            <div class="task-name">${task.name}</div>
+                            <div class="task-xp">+${task.xp} XP</div>
+                        </div>
+                    `;
+                });
+
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = '<p style="text-align:center; color: red;">Ошибка связи с базой данных.</p>';
             }
         }
     </script>
