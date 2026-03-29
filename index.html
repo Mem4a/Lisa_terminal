@@ -287,9 +287,13 @@
             container.innerHTML = '<p style="text-align:center;" class="blink-text">ЧТЕНИЕ СВИТКОВ...</p>';
             
             try {
-                // Упрощенный запрос для обхода CORS
                 const response = await fetch(`${N8N_GET_TASKS_URL}?t=${Date.now()}`);
-                const tasks = await response.json();
+                const rawData = await response.json();
+                
+                console.log("Данные из n8n:", rawData); // Проверка в консоли
+
+                // Умная проверка: если пришел объект {tasks: [...]}, берем внутренний список
+                const tasks = Array.isArray(rawData) ? rawData : (rawData.tasks || []);
                 
                 container.innerHTML = tasks.length ? '' : '<p style="text-align:center; padding: 20px;">ИНЦИДЕНТОВ НЕТ. ТИШИНА.</p>';
                 
@@ -303,7 +307,13 @@
                             <button class="complete-btn" onclick="completeTask('${task.id}', this)">[ ИЗГНАТЬ ]</button>
                         </div>`;
                 });
+                
+                if (tasks.length > 0) {
+                    lisaSpeak(`Обнаружено ${tasks.length} инцидентов. Будьте осторожны.`);
+                }
+
             } catch (e) { 
+                console.error("Ошибка:", e);
                 container.innerHTML = `<p style="text-align:center; color:red;">[ ОШИБКА СВЯЗИ ]<br><small>${e.message}</small></p>`; 
             }
         }
