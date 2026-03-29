@@ -210,7 +210,6 @@
         async function authenticate() {
             const audio = document.getElementById('bgMusic');
             audio.play().catch(e => {});
-            
             const statusText = document.getElementById('loaderStatus');
             statusText.innerText = "СВЕРКА ПЕЧАТЕЙ...";
             statusText.style.animation = "textGlitch 0.2s infinite";
@@ -281,34 +280,19 @@
             }
         }
 
+        // ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ
         async function loadTasks() {
             openScreen('viewTasksScreen');
             const container = document.getElementById('taskListContent');
-            container.innerHTML = '<p style="text-align:center; margin-top: 20px;" class="blink-text">СКАНИРОВАНИЕ АРХИВА...</p>';
+            container.innerHTML = '<p style="text-align:center;" class="blink-text">ЧТЕНИЕ СВИТКОВ...</p>';
             
-            lisaSpeak("Ищу активные инциденты в базе...");
-
             try {
-                // Добавляем кэш-бастер, чтобы данные всегда были свежими
-                const response = await fetch(`${N8N_GET_TASKS_URL}?t=${Date.now()}`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                    }
-                });
-                
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                
+                // Упрощенный запрос для обхода CORS
+                const response = await fetch(`${N8N_GET_TASKS_URL}?t=${Date.now()}`);
                 const tasks = await response.json();
-                console.log("Данные из архива:", tasks); // Увидишь в консоли браузера
-
-                if (!tasks || tasks.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; font-weight: bold; margin-top: 20px;">ГОРИЗОНТ ЧИСТ. ИНЦИДЕНТОВ НЕ ОБНАРУЖЕНО.</p>';
-                    lisaSpeak("Странно... В городе подозрительно тихо.");
-                    return;
-                }
-
-                container.innerHTML = ''; 
+                
+                container.innerHTML = tasks.length ? '' : '<p style="text-align:center; padding: 20px;">ИНЦИДЕНТОВ НЕТ. ТИШИНА.</p>';
+                
                 tasks.forEach(task => {
                     container.innerHTML += `
                         <div class="task-item" id="task-${task.id}">
@@ -317,15 +301,25 @@
                                 <div class="task-xp">${task.xp} УГРОЗА</div>
                             </div>
                             <button class="complete-btn" onclick="completeTask('${task.id}', this)">[ ИЗГНАТЬ ]</button>
-                        </div>
-                    `;
+                        </div>`;
                 });
-
-            } catch (error) {
-                console.error("Критическая ошибка связи:", error);
-                container.innerHTML = `<p style="text-align:center; color: var(--error-color);">[ СВЯЗЬ С АРХИВОМ ПОТЕРЯНА ]<br><small style="font-size:10px;">${error.message}</small></p>`;
-                lisaSpeak("Семпай, что-то блокирует сигнал из Архива!");
+            } catch (e) { 
+                container.innerHTML = `<p style="text-align:center; color:red;">[ ОШИБКА СВЯЗИ ]<br><small>${e.message}</small></p>`; 
             }
+        }
+
+        async function completeTask(taskId, btn) {
+            btn.innerText = '[ ... ]';
+            try {
+                await fetch(N8N_COMPLETE_TASK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task_id: taskId })
+                });
+                const el = document.getElementById(`task-${taskId}`);
+                if (el) el.remove();
+                lisaSpeak("Инцидент исчерпан. Зло отступило.");
+            } catch (e) { btn.innerText = '[ ОШИБКА ]'; }
         }
     </script>
 </body>
