@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v10 (Tasks Viewer)</title>
+    <title>Stamina: WOH Edition v12 (Final Integration)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -56,15 +56,12 @@
             box-shadow: 3px 3px 0px rgba(0,0,0,0.5); transition: transform 0.05s;
         }
 
-        .sound-btn:active { transform: translate(2px, 2px); box-shadow: none; background: #fff; color: #000; }
-
         .frame {
             border: var(--border-style); padding: 15px; width: 100%; max-width: 380px;
             background: #fff; box-shadow: 6px 6px 0px #000; margin-bottom: 20px;
             box-sizing: border-box; position: relative; animation: ditherBoot 0.4s steps(4) ease-out; margin-top: 40px;
         }
 
-        .error-frame { border-color: var(--error-color); box-shadow: 6px 6px 0px var(--error-color); color: var(--error-color); text-align: center; }
         .header-title { font-size: 26px; text-transform: uppercase; border-bottom: var(--border-style); margin-bottom: 15px; text-align: center; padding-bottom: 5px; font-weight: bold; }
 
         .manga-panel {
@@ -98,24 +95,18 @@
 
         button.menu-btn { width: 100%; background: #000; color: #fff; border: 2px solid #000; font-family: 'VT323', monospace; font-size: 22px; padding: 12px; margin: 6px 0; cursor: pointer; text-transform: uppercase; transition: transform 0.05s; position: relative; }
         button.menu-btn:hover { background: #fff; color: #000; animation: textGlitch 0.3s steps(2) infinite; }
-        button.menu-btn:active { transform: translate(3px, 3px); box-shadow: none; animation: none; }
-        label { display: block; margin-top: 10px; margin-bottom: 5px; font-size: 20px; font-weight: bold; }
-        input, select { width: 100%; box-sizing: border-box; border: 2px solid #000; padding: 10px; font-family: 'VT323', monospace; font-size: 18px; background: #fff; color: #000; outline: none; }
-        input:focus, select:focus { background: #000; color: #fff; }
-        
-        /* Стили для списка задач */
+
         .task-item {
-            border: 2px solid #000;
-            padding: 10px;
-            margin-bottom: 10px;
-            background: #f9f9f9;
-            box-shadow: 3px 3px 0px #000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border: 2px solid #000; padding: 10px; margin-bottom: 10px; background: #fff;
+            box-shadow: 3px 3px 0px #000; display: flex; justify-content: space-between; align-items: center;
         }
-        .task-name { font-size: 18px; font-weight: bold; }
-        .task-xp { font-size: 16px; background: #000; color: #fff; padding: 2px 6px; }
+        .task-name { font-size: 18px; font-weight: bold; line-height: 1.1; }
+        .task-xp { font-size: 14px; background: #000; color: #fff; padding: 2px 5px; margin-top: 4px; display: inline-block; }
+
+        .complete-btn {
+            background: #fff; color: #000; border: 2px solid #000; font-family: 'VT323', monospace;
+            padding: 4px 8px; cursor: pointer; box-shadow: 2px 2px 0px #000;
+        }
 
         .hidden { display: none !important; }
         .blink-text { animation: blink 1.5s steps(2) infinite; cursor: pointer; }
@@ -134,10 +125,9 @@
         <p id="loaderStatus" style="text-align:center; font-size: 20px; margin-top: 30px;" class="blink-text">[ НАЖМИ НА ЭКРАН ДЛЯ ЗАПУСКА ]</p>
     </div>
 
-    <div id="accessDeniedScreen" class="frame error-frame hidden">
-        <div class="header-title" style="border-bottom: 3px solid var(--error-color);">FATAL ERROR</div>
-        <div style="font-size: 60px; margin: 10px 0;">👁️</div>
-        <p style="font-size: 22px; font-weight: bold;">ДОСТУП ЗАПРЕЩЕН</p>
+    <div id="accessDeniedScreen" class="frame hidden" style="border-color: red; color: red;">
+        <div class="header-title" style="border-color: red;">FATAL ERROR</div>
+        <p style="text-align:center; font-size: 22px;">В ДОСТУПЕ ОТКАЗАНО</p>
     </div>
 
     <div id="mainMenuScreen" class="frame hidden">
@@ -145,19 +135,17 @@
             <img src="https://www.stridepr.com/wp-content/uploads/2023/10/WORLD-OF-HORROR-v1.0-Launch-Trailer-0-55-screenshot-360x240.png" alt="WOH Scene" class="pixel-portrait">
             <div id="lisaBubble" class="speech-bubble hidden">...</div>
         </div>
-
         <div class="header-title">LISA TERMINAL</div>
-        <p style="text-align: center; font-size: 18px; font-weight: bold;">Добро пожаловать, <span id="userName">Семпай</span>.</p>
-
-        <button class="menu-btn" onclick="openScreen('createTaskScreen')">[+] Создать Квест</button>
-        <button class="menu-btn" onclick="loadTasks()">[=] Активные Задачи</button>
+        <p style="text-align: center; font-size: 18px; font-weight: bold;">Архив открыт, <span id="userName">Семпай</span>.</p>
+        <button class="menu-btn" onclick="openScreen('createTaskScreen')">[+] Новое Дело</button>
+        <button class="menu-btn" onclick="loadTasks()">[=] Открытые Инциденты</button>
     </div>
 
     <div id="createTaskScreen" class="frame hidden">
-        <div class="header-title">NEW QUEST</div>
-        <label>Название квеста</label>
-        <input type="text" id="taskName" placeholder="Изгнать прокрастинацию...">
-        <label>Характеристика</label>
+        <div class="header-title">NEW INCIDENT</div>
+        <label>Описание дела</label>
+        <input type="text" id="taskName" placeholder="Провести ритуал...">
+        <label>Сфера расследования</label>
         <select id="taskStat">
             <option value="19ce1807-5ea9-8096-96bd-ce6d6f1c6944">🤓 Сила Клерка</option>
             <option value="19ce1807-5ea9-8033-96d6-e68cba9370fc">🫁 Здоровье</option>
@@ -167,39 +155,34 @@
             <option value="19ce1807-5ea9-80f2-9009-fb37181d34af">🕵️‍♂️ Монтаж</option>
             <option value="19ee1807-5ea9-800c-ba78-e54ede7dac9a">🕎 Mentality</option>
         </select>
-        <label>Сложность (XP)</label>
+        <label>Уровень угрозы (XP)</label>
         <select id="taskXP">
             <option value="15">15 XP (Легко)</option>
-            <option value="30">30 XP (Средне)</option>
-            <option value="50">50 XP (Хардкор)</option>
+            <option value="30">30 XP (Опасно)</option>
+            <option value="50">50 XP (Смертельно)</option>
         </select>
-        <label>Дата выполнения</label>
+        <label>Дата инцидента</label>
         <input type="date" id="taskDate">
-        <button id="browserSubmitBtn" class="menu-btn" style="margin-top: 20px; background: #fff; color: #000;" onclick="submitTask()">[ ОТПРАВИТЬ В БАЗУ ]</button>
+        <button id="browserSubmitBtn" class="menu-btn" style="margin-top: 20px; background: #fff; color: #000;" onclick="submitTask()">[ ЗАНЕСТИ В АРХИВ ]</button>
     </div>
 
     <div id="viewTasksScreen" class="frame hidden">
-        <div class="header-title">ACTIVE QUESTS</div>
-        <div id="taskListContent" style="min-height: 100px;">
-            <p style="text-align:center; margin-top: 20px;" class="blink-text">Загрузка данных из Базы...</p>
-        </div>
+        <div class="header-title">OPEN INVESTIGATIONS</div>
+        <div id="taskListContent"></div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.setHeaderColor('#e6e6e6'); 
-        tg.setBackgroundColor('#e6e6e6');
 
         const AUTH_WEBHOOK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/b0607fcb-775f-466e-8f2d-cc3b81fb632e'; 
         const N8N_CREATE_TASK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/ba753654-0bcf-44b6-bd2f-299a6a5b389f';
-        // НОВЫЙ ВЕБХУК ДЛЯ ПОЛУЧЕНИЯ ЗАДАЧ
         const N8N_GET_TASKS_URL = 'https://n8n.nevn8n8amocrm.online/webhook/stamina-get-tasks';
+        const N8N_COMPLETE_TASK_URL = 'https://n8n.nevn8n8amocrm.online/webhook/stamina-complete-task';
 
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('taskDate').value = today;
 
-        let currentUser = null; 
         let typeWriterTimeout;
 
         function lisaSpeak(text) {
@@ -207,13 +190,12 @@
             bubble.classList.remove('hidden');
             bubble.innerText = '';
             clearTimeout(typeWriterTimeout);
-
             let i = 0;
             function typeWriter() {
                 if (i < text.length) {
                     bubble.innerHTML += text.charAt(i);
                     i++;
-                    typeWriterTimeout = setTimeout(typeWriter, 30); 
+                    typeWriterTimeout = setTimeout(typeWriter, 35);
                 }
             }
             typeWriter();
@@ -221,22 +203,17 @@
 
         function toggleSound() {
             const audio = document.getElementById('bgMusic');
-            const btn = document.getElementById('soundToggleBtn');
             audio.muted = !audio.muted;
-            btn.innerText = audio.muted ? '[ ♪ OFF ]' : '[ ♪ ON ]';
+            document.getElementById('soundToggleBtn').innerText = audio.muted ? '[ ♪ OFF ]' : '[ ♪ ON ]';
         }
 
         async function authenticate() {
             const audio = document.getElementById('bgMusic');
-            audio.volume = 0.5; 
-            audio.play().catch(e => console.log("Браузер заблокировал аудио", e));
-
+            audio.play().catch(e => {});
+            
             const statusText = document.getElementById('loaderStatus');
-            statusText.innerText = "ИДЕНТИФИКАЦИЯ...";
-            statusText.classList.remove('blink-text');
+            statusText.innerText = "СВЕРКА ПЕЧАТЕЙ...";
             statusText.style.animation = "textGlitch 0.2s infinite";
-            document.getElementById('loaderScreen').style.cursor = "default";
-            document.getElementById('loaderScreen').onclick = null;
 
             let tgId = tg.initDataUnsafe?.user?.id || 1211686949; 
 
@@ -246,121 +223,93 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tg_id: tgId })
                 });
-
                 const data = await response.json();
-
-                if (response.ok && data.status === 'ok' && data.is_active) {
-                    currentUser = data;
-                    if (data.name) document.getElementById('userName').innerText = data.name;
-                    openScreen('mainMenuScreen'); 
+                if (response.ok && data.status === 'ok') {
+                    document.getElementById('userName').innerText = data.name || "Семпай";
+                    openScreen('mainMenuScreen');
                     document.getElementById('soundToggleBtn').classList.remove('hidden');
-                    setTimeout(() => lisaSpeak(`С возвращением, ${data.name || "Семпай"}. База данных обновлена.`), 500);
+                    setTimeout(() => lisaSpeak(`Рада видеть вас живым, ${data.name || "Семпай"}.`), 500);
                 } else {
-                    openScreen('accessDeniedScreen'); 
+                    openScreen('accessDeniedScreen');
                 }
-            } catch (error) {
+            } catch (e) {
                 statusText.innerText = "[ ОШИБКА СЕРВЕРА ]";
-                statusText.style.color = "red";
             }
         }
 
         function openScreen(screenId) {
             document.querySelectorAll('.frame').forEach(el => el.classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
-            document.getElementById('lisaBubble').classList.add('hidden'); 
-
-            if (screenId === 'loaderScreen' || screenId === 'mainMenuScreen' || screenId === 'accessDeniedScreen') {
-                tg.BackButton.hide();
-                tg.MainButton.hide();
-            } else {
+            document.getElementById('lisaBubble').classList.add('hidden');
+            
+            if (screenId !== 'mainMenuScreen') {
                 tg.BackButton.show();
                 tg.BackButton.onClick(() => openScreen('mainMenuScreen'));
-                
-                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                    document.getElementById('browserSubmitBtn').style.display = 'none';
-                    if (screenId === 'createTaskScreen') {
-                        tg.MainButton.setText("ЗАПИСАТЬ В БОРТЖУРНАЛ");
-                        tg.MainButton.setParams({ color: '#000000', text_color: '#ffffff' });
-                        tg.MainButton.show();
-                        tg.MainButton.onClick(submitTask);
-                    } else if (screenId === 'viewTasksScreen') {
-                        tg.MainButton.hide();
-                    }
-                }
+            } else {
+                tg.BackButton.hide();
+            }
+
+            if (screenId === 'createTaskScreen' && tg.initDataUnsafe?.user) {
+                tg.MainButton.setText("ЗАНЕСТИ В АРХИВ");
+                tg.MainButton.show();
+                tg.MainButton.onClick(submitTask);
+            } else {
+                tg.MainButton.hide();
             }
         }
 
         async function submitTask() {
             const payload = {
-                intent: 'create_task',
                 task_name: document.getElementById('taskName').value,
                 stat_id: document.getElementById('taskStat').value,
                 xp: parseInt(document.getElementById('taskXP').value),
-                date: document.getElementById('taskDate').value,
-                user_tg_id: tg.initDataUnsafe?.user?.id || 1211686949 
+                date: document.getElementById('taskDate').value
             };
-
-            if (!payload.task_name) {
-                tg.showAlert ? tg.showAlert("Имя квеста не может быть пустым!") : alert("Имя квеста не может быть пустым!");
-                return;
-            }
-
-            if (tg.MainButton.isVisible) tg.MainButton.showProgress();
-            
+            if (!payload.task_name) return;
+            tg.MainButton.showProgress();
             try {
-                const response = await fetch(N8N_CREATE_TASK_URL, {
+                await fetch(N8N_CREATE_TASK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
-                if (response.ok) {
-                    document.getElementById('taskName').value = '';
-                    openScreen('mainMenuScreen');
-                    setTimeout(() => lisaSpeak("Квест успешно занесен в базу! (o^▽^o)"), 500);
-                } else {
-                    tg.showAlert ? tg.showAlert("Ошибка при записи в n8n!") : alert("Ошибка при записи!");
-                }
-            } catch (error) {
-                tg.showAlert ? tg.showAlert("Ошибка сети.") : alert("Ошибка сети.");
+                document.getElementById('taskName').value = '';
+                openScreen('mainMenuScreen');
+                setTimeout(() => lisaSpeak("Инцидент зафиксирован во тьме..."), 500);
             } finally {
-                if (tg.MainButton.isVisible) tg.MainButton.hideProgress();
+                tg.MainButton.hideProgress();
             }
         }
 
-        // --- НОВАЯ ФУНКЦИЯ ЗАГРУЗКИ ЗАДАЧ ---
         async function loadTasks() {
             openScreen('viewTasksScreen');
             const container = document.getElementById('taskListContent');
-            container.innerHTML = '<p style="text-align:center; margin-top: 20px;" class="blink-text">Получение данных...</p>';
-
+            container.innerHTML = '<p style="text-align:center;" class="blink-text">ЧТЕНИЕ СВИТКОВ...</p>';
             try {
-                // Вызываем GET вебхук в n8n
-                const response = await fetch(N8N_GET_TASKS_URL, { method: 'GET' });
-                
-                if (!response.ok) throw new Error("Ошибка сервера");
-                
+                const response = await fetch(N8N_GET_TASKS_URL);
                 const tasks = await response.json();
-
-                if (tasks.length === 0) {
-                    container.innerHTML = '<p style="text-align:center; font-weight: bold; margin-top: 20px;">Активных квестов нет! Можно отдыхать.</p>';
-                    return;
-                }
-
-                container.innerHTML = ''; // Очищаем
+                container.innerHTML = tasks.length ? '' : '<p style="text-align:center;">ИНЦИДЕНТОВ НЕТ. ТИШИНА.</p>';
                 tasks.forEach(task => {
                     container.innerHTML += `
-                        <div class="task-item">
-                            <div class="task-name">${task.name}</div>
-                            <div class="task-xp">+${task.xp} XP</div>
-                        </div>
-                    `;
+                        <div class="task-item" id="task-${task.id}">
+                            <div><div class="task-name">${task.name}</div><div class="task-xp">${task.xp} УГРОЗА</div></div>
+                            <button class="complete-btn" onclick="completeTask('${task.id}', this)">[ ИЗГНАТЬ ]</button>
+                        </div>`;
                 });
+            } catch (e) { container.innerHTML = '<p>ОШИБКА СВЯЗИ.</p>'; }
+        }
 
-            } catch (error) {
-                console.error(error);
-                container.innerHTML = '<p style="text-align:center; color: red;">Ошибка связи с базой данных.</p>';
-            }
+        async function completeTask(taskId, btn) {
+            btn.innerText = '[ ... ]';
+            try {
+                await fetch(N8N_COMPLETE_TASK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ task_id: taskId })
+                });
+                document.getElementById(`task-${taskId}`).remove();
+                lisaSpeak("Инцидент исчерпан. Зло отступило.");
+            } catch (e) { btn.innerText = '[ ОШИБКА ]'; }
         }
     </script>
 </body>
