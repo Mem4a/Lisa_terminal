@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v17 (Thin Client & Errors)</title>
+    <title>Stamina: WOH Edition v18 (Performance Fix)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
@@ -157,26 +157,26 @@
         document.getElementById('taskDate').value = today;
 
         let typeWriterTimeout;
-        let globalBackendData = null; // Храним всё, что прислал сервер
+        let globalBackendData = null; 
         let backTarget = 'mainMenuScreen'; 
-        let lastFailedFunction = null; // Для кнопки ПОВТОРИТЬ ПОПЫТКУ
+        let lastFailedFunction = null; 
 
         tg.BackButton.onClick(() => {
             if(backTarget === 'statsScreen') loadStats();
             else openScreen(backTarget);
         });
 
+        // ОПТИМИЗАЦИЯ 1: ИЗБЕГАЕМ ИЗБИЕНИЯ DOM В АНИМАЦИИ ТЕКСТА
         function lisaSpeak(text) {
             const bubble = document.getElementById('lisaBubble');
             bubble.classList.remove('hidden');
-            bubble.innerText = '';
             clearTimeout(typeWriterTimeout);
             let i = 0;
             function typeWriter() {
-                if (i < text.length) {
-                    bubble.innerHTML += text.charAt(i);
+                if (i <= text.length) {
+                    bubble.innerText = text.slice(0, i); // Быстрая вставка текста вместо innerHTML +=
                     i++;
-                    typeWriterTimeout = setTimeout(typeWriter, 30);
+                    typeWriterTimeout = setTimeout(typeWriter, 25);
                 }
             }
             typeWriter();
@@ -201,34 +201,33 @@
         }
 
         async function authenticate() {
-            // Безопасный запуск аудио
             const audio = document.getElementById('bgMusic');
-            try { await audio.play(); } catch (e) { console.warn("Autoplay blocked by browser policy"); }
+            try { await audio.play(); } catch (e) { console.warn("Autoplay blocked by browser"); }
             
             const statusText = document.getElementById('loaderStatus');
             statusText.innerText = "СВЕРКА ПЕЧАТЕЙ...";
 
-            // Пока используем unsafe (исправим на следующем этапе)
             let tgId = tg.initDataUnsafe?.user?.id || 1211686949; 
 
             try {
-                // ПРЕДЗАГРУЗКА ДАННЫХ ДЛЯ ДРОПДАУНА (Без хардкода!)
+                // ОПТИМИЗАЦИЯ 2: Собираем опции селекта в строку перед вставкой
                 fetch(`${N8N_GET_STATS_URL}?t=${Date.now()}`)
                     .then(res => res.json())
                     .then(data => {
                         if(data.categories) {
                             const select = document.getElementById('taskStat');
-                            select.innerHTML = '';
+                            let optionsHtml = '';
                             data.categories.forEach(cat => {
-                                select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                                optionsHtml += `<option value="${cat.id}">${cat.name}</option>`;
                             });
+                            select.innerHTML = optionsHtml;
                         }
                     }).catch(e => console.error("Failed to load categories"));
 
                 const response = await fetch(AUTH_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tg_id: tgId }) // В будущем заменим на tg.initData
+                    body: JSON.stringify({ tg_id: tgId }) 
                 });
                 
                 if (!response.ok) throw new Error("HTTP Status " + response.status);
@@ -303,9 +302,16 @@
                 if (!response.ok) throw new Error("Bad response");
                 const rawData = await response.json();
                 const tasks = Array.isArray(rawData) ? rawData : (rawData.tasks || []);
-                container.innerHTML = tasks.length ? '' : '<p style="text-align:center; padding: 20px;">ИНЦИДЕНТОВ НЕТ. ТИШИНА.</p>';
+                
+                if (tasks.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding: 20px;">ИНЦИДЕНТОВ НЕТ. ТИШИНА.</p>';
+                    return;
+                }
+
+                // ОПТИМИЗАЦИЯ 3: Собираем список задач в строку, затем 1 раз вставляем в DOM
+                let htmlBuffer = '';
                 tasks.forEach(task => {
-                    container.innerHTML += `
+                    htmlBuffer += `
                         <div class="task-item" id="task-${task.id}">
                             <div style="flex-grow: 1; padding-right: 10px;">
                                 <div class="task-name">${task.name}</div>
@@ -314,6 +320,8 @@
                             <button class="complete-btn" onclick="completeTask('${task.id}', this)">[ ИЗГНАТЬ ]</button>
                         </div>`;
                 });
+                container.innerHTML = htmlBuffer;
+
             } catch (e) { showError("ОШИБКА АРХИВА<br>Не удалось прочесть свитки.", loadTasks); }
         }
 
@@ -341,7 +349,6 @@
                         setTimeout(() => taskElement.remove(), 500); 
                     }, 2000);
                 }
-                lisaSpeak("Инцидент исчерпан. Зло отступило.");
             } catch (e) { 
                 btn.innerText = '[ ОШИБКА ]'; 
                 if (taskElement) taskElement.style.animation = 'none';
@@ -349,7 +356,6 @@
             }
         }
 
-        // --- ТОНКИЙ КЛИЕНТ (THIN CLIENT): ТОЛЬКО ОТРИСОВКА ---
         async function loadStats() {
             openScreen('statsScreen');
             const container = document.getElementById('statsListContent');
@@ -361,25 +367,24 @@
             try {
                 const response = await fetch(`${N8N_GET_STATS_URL}?t=${Date.now()}`);
                 if (!response.ok) throw new Error("Stats Server Error");
-                globalBackendData = await response.json(); // Сохраняем всё, что прислал сервер
+                globalBackendData = await response.json(); 
                 
                 const stats = globalBackendData.stats || [];
 
-                container.innerHTML = '';
                 if(stats.length === 0) {
                     container.innerHTML = '<p style="text-align:center;">Данные о сущности не найдены.</p>';
                     return;
                 }
 
-                // Рендер звания из бэкенда
                 if (globalBackendData.profile) {
                     document.getElementById('playerTitle').innerText = `[ ${globalBackendData.profile.title} ]`;
                     titleBlock.style.display = 'block';
                 }
 
-                // Рендер шкал
+                // ОПТИМИЗАЦИЯ 4: Собираем список характеристик в память, затем вставляем в DOM
+                let htmlBuffer = '';
                 stats.forEach(stat => {
-                    container.innerHTML += `
+                    htmlBuffer += `
                         <div class="stat-container">
                             <div class="stat-header">
                                 <span>${stat.name} <span class="stat-level">LVL ${stat.level}</span></span>
@@ -391,6 +396,8 @@
                         </div>
                     `;
                 });
+                container.innerHTML = htmlBuffer;
+
             } catch (e) { showError("СБОЙ БИОМЕТРИИ<br>Сервер не отвечает.", loadStats); }
         }
 
