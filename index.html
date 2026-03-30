@@ -3,157 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Stamina: WOH Edition v16 (Forms Overhaul)</title>
+    <title>Stamina: WOH Edition v17 (Thin Client & Errors)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #e6e6e6; 
-            --text-color: #000000;
-            --border-style: 3px solid #000;
-            --error-color: #ff0000;
-        }
-
-        @keyframes textGlitch {
-            0% { transform: translate(0); text-shadow: none; }
-            25% { transform: translate(-2px, 1px); color: #ff0000; }
-            50% { transform: translate(2px, -1px); color: #0000ff; }
-            75% { transform: translate(-1px, -1px); color: #000000; }
-            100% { transform: translate(0); }
-        }
-
-        @keyframes panelPulse {
-            0% { transform: scale(1); box-shadow: 4px 4px 0px #000; }
-            50% { transform: scale(1.02); box-shadow: 6px 6px 0px #000; }
-            100% { transform: scale(1); box-shadow: 4px 4px 0px #000; }
-        }
-
-        @keyframes ditherBoot {
-            from { opacity: 0; transform: translateY(5px); filter: contrast(200%); }
-            to { opacity: 1; transform: translateY(0); filter: contrast(100%); }
-        }
-
+        :root { --bg-color: #e6e6e6; --text-color: #000000; --border-style: 3px solid #000; --error-color: #ff0000; }
+        @keyframes textGlitch { 0% { transform: translate(0); text-shadow: none; } 25% { transform: translate(-2px, 1px); color: #ff0000; } 50% { transform: translate(2px, -1px); color: #0000ff; } 75% { transform: translate(-1px, -1px); color: #000000; } 100% { transform: translate(0); } }
+        @keyframes panelPulse { 0% { transform: scale(1); box-shadow: 4px 4px 0px #000; } 50% { transform: scale(1.02); box-shadow: 6px 6px 0px #000; } 100% { transform: scale(1); box-shadow: 4px 4px 0px #000; } }
+        @keyframes ditherBoot { from { opacity: 0; transform: translateY(5px); filter: contrast(200%); } to { opacity: 1; transform: translateY(0); filter: contrast(100%); } }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-        body {
-            font-family: 'VT323', monospace;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSIyIiBoZWlnaHQ9IjIiIGZpbGw9IiMwMDAwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==');
-            padding-bottom: 80px;
-        }
-
-        .sound-btn {
-            position: fixed; top: 15px; right: 15px;
-            background: #000; color: #fff; border: 2px solid #000;
-            font-family: 'VT323', monospace; font-size: 16px;
-            padding: 5px 10px; cursor: pointer; z-index: 999;
-            box-shadow: 3px 3px 0px rgba(0,0,0,0.5); transition: transform 0.05s;
-        }
+        
+        body { font-family: 'VT323', monospace; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSIyIiBoZWlnaHQ9IjIiIGZpbGw9IiMwMDAwMDAiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg=='); padding-bottom: 80px; }
+        .sound-btn { position: fixed; top: 15px; right: 15px; background: #000; color: #fff; border: 2px solid #000; font-family: 'VT323', monospace; font-size: 16px; padding: 5px 10px; cursor: pointer; z-index: 999; box-shadow: 3px 3px 0px rgba(0,0,0,0.5); transition: transform 0.05s; }
         .sound-btn:active { transform: translate(2px, 2px); box-shadow: none; }
-
-        .frame {
-            border: var(--border-style); padding: 15px; width: 100%; max-width: 380px;
-            background: #fff; box-shadow: 6px 6px 0px #000; margin-bottom: 20px;
-            box-sizing: border-box; position: relative; animation: ditherBoot 0.4s steps(4) ease-out; margin-top: 40px;
-        }
-
+        .frame { border: var(--border-style); padding: 15px; width: 100%; max-width: 380px; background: #fff; box-shadow: 6px 6px 0px #000; margin-bottom: 20px; box-sizing: border-box; position: relative; animation: ditherBoot 0.4s steps(4) ease-out; margin-top: 40px; }
         .header-title { font-size: 26px; text-transform: uppercase; border-bottom: var(--border-style); margin-bottom: 15px; text-align: center; padding-bottom: 5px; font-weight: bold; }
-
-        .manga-panel {
-            width: 100%; height: 160px; border: var(--border-style);
-            margin: 0 auto 15px; background: #000; box-shadow: 4px 4px 0px #000;
-            overflow: hidden; animation: panelPulse 4s ease-in-out infinite;
-            display: flex; align-items: center; justify-content: center;
-            position: relative; 
-        }
-
+        .manga-panel { width: 100%; height: 160px; border: var(--border-style); margin: 0 auto 15px; background: #000; box-shadow: 4px 4px 0px #000; overflow: hidden; animation: panelPulse 4s ease-in-out infinite; display: flex; align-items: center; justify-content: center; position: relative; }
         .pixel-portrait { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; filter: grayscale(100%) contrast(120%); }
-
-        .speech-bubble {
-            position: absolute; background: #fff; color: #000; border: 2px solid #000;
-            padding: 8px 12px; font-family: 'VT323', monospace; font-size: 16px;
-            line-height: 1.1; max-width: 140px; z-index: 10; box-shadow: 3px 3px 0px #000;
-            bottom: 15px; left: 15px;  
-        }
-
+        .speech-bubble { position: absolute; background: #fff; color: #000; border: 2px solid #000; padding: 8px 12px; font-family: 'VT323', monospace; font-size: 16px; line-height: 1.1; max-width: 140px; z-index: 10; box-shadow: 3px 3px 0px #000; bottom: 15px; left: 15px; }
         .speech-bubble::after { content: ''; position: absolute; top: -14px; right: -10px; border-width: 0 0 15px 15px; border-style: solid; border-color: transparent transparent #000 transparent; }
         .speech-bubble::before { content: ''; position: absolute; top: -9px; right: -7px; border-width: 0 0 10px 10px; border-style: solid; border-color: transparent transparent #fff transparent; z-index: 1; }
-
-        /* ИСПРАВЛЕННЫЕ КНОПКИ */
         button.menu-btn { width: 100%; background: #000; color: #fff; border: 2px solid #000; font-family: 'VT323', monospace; font-size: 22px; padding: 12px; margin: 6px 0; cursor: pointer; text-transform: uppercase; transition: all 0.1s; position: relative; box-shadow: 4px 4px 0px rgba(0,0,0,0.3); }
         button.menu-btn:active { background: #fff !important; color: #000 !important; transform: translate(3px, 3px); box-shadow: none; animation: textGlitch 0.2s steps(2) infinite; }
-        
         button.small-btn { font-size: 16px; padding: 6px; margin-top: 10px; background: #fff; color: #000; border: 2px dashed #000; box-shadow: 2px 2px 0px rgba(0,0,0,0.3); }
         button.small-btn:active { background: #000; color: #fff; transform: translate(2px, 2px); box-shadow: none; }
-
         .task-item { border: 2px solid #000; padding: 10px; margin-bottom: 10px; background: #fff; box-shadow: 3px 3px 0px #000; display: flex; justify-content: space-between; align-items: center; }
         .task-name { font-size: 18px; font-weight: bold; line-height: 1.1; }
         .task-xp { font-size: 14px; background: #000; color: #fff; padding: 2px 5px; margin-top: 4px; display: inline-block; }
-        
         .complete-btn { background: #fff; color: #000; border: 2px solid #000; font-family: 'VT323', monospace; padding: 4px 8px; cursor: pointer; box-shadow: 2px 2px 0px #000; transition: transform 0.1s; }
         .complete-btn:active { transform: translate(2px, 2px); box-shadow: none; background: #000; color: #fff; }
-
         .stat-container { margin-bottom: 15px; }
         .stat-header { display: flex; justify-content: space-between; font-size: 18px; font-weight: bold; margin-bottom: 4px; }
         .stat-bar-bg { width: 100%; height: 16px; border: 2px solid #000; background: #fff; position: relative; box-sizing: border-box; }
         .stat-bar-fill { height: 100%; background: #000; transition: width 0.5s ease-out; }
         .stat-level { font-size: 14px; color: #666; }
-
         .title-block { border: 2px dashed #000; padding: 10px; margin-bottom: 20px; text-align: center; background: #f9f9f9; }
         .title-label { font-size: 16px; color: #666; }
         .title-name { font-size: 24px; font-weight: bold; text-transform: uppercase; margin-top: 5px; animation: textGlitch 3s infinite; }
-
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; font-size: 18px; color: #333; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
-        
-        /* ИСПРАВЛЕННЫЕ ПОЛЯ ВВОДА (БЕЗ ЧЕРНОГО ФОНА) */
-        input[type="text"], input[type="date"], select {
-            width: 100%; box-sizing: border-box; border: 2px solid #000; padding: 10px;
-            font-family: 'VT323', monospace; font-size: 20px; background: #fff; color: #000;
-            outline: none; -webkit-appearance: none; appearance: none; border-radius: 0;
-            box-shadow: 2px 2px 0px #000;
-            transition: all 0.1s;
-        }
-        
-        input[type="text"]:focus, input[type="date"]:focus, select:focus {
-            border-color: var(--error-color); 
-            box-shadow: 4px 4px 0px var(--error-color);
-            background: #fff; /* Оставляем белым, чтобы курсор было видно */
-            color: #000;
-        }
-        
+        input[type="text"], input[type="date"], select { width: 100%; box-sizing: border-box; border: 2px solid #000; padding: 10px; font-family: 'VT323', monospace; font-size: 20px; background: #fff; color: #000; outline: none; -webkit-appearance: none; appearance: none; border-radius: 0; box-shadow: 2px 2px 0px #000; transition: all 0.1s; }
+        input[type="text"]:focus, input[type="date"]:focus, select:focus { border-color: var(--error-color); box-shadow: 4px 4px 0px var(--error-color); background: #fff; color: #000; }
         input[type="text"]::placeholder { color: #aaa; }
-        
         .select-wrapper { position: relative; }
-        .select-wrapper::after {
-            content: '▼'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            pointer-events: none; font-size: 14px; color: #000; transition: color 0.1s;
-        }
+        .select-wrapper::after { content: '▼'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 14px; color: #000; transition: color 0.1s; }
         .select-wrapper:focus-within::after { color: var(--error-color); }
-
         .xp-selector { display: flex; gap: 8px; }
         .xp-selector input[type="radio"] { display: none; }
-        .xp-selector label {
-            flex: 1; border: 2px solid #000; text-align: center; padding: 8px 0;
-            font-size: 18px; cursor: pointer; text-transform: uppercase; background: #fff; color: #000;
-            box-shadow: 2px 2px 0px #000; font-weight: bold; transition: 0.1s;
-        }
-        .xp-selector input[type="radio"]:checked + label {
-            background: #000; color: #fff; box-shadow: inset 2px 2px 0px rgba(0,0,0,0.8);
-            transform: translate(2px, 2px);
-        }
-
+        .xp-selector label { flex: 1; border: 2px solid #000; text-align: center; padding: 8px 0; font-size: 18px; cursor: pointer; text-transform: uppercase; background: #fff; color: #000; box-shadow: 2px 2px 0px #000; font-weight: bold; transition: 0.1s; }
+        .xp-selector input[type="radio"]:checked + label { background: #000; color: #fff; box-shadow: inset 2px 2px 0px rgba(0,0,0,0.8); transform: translate(2px, 2px); }
         .codex-section { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px dotted #ccc; }
         .codex-h { font-size: 18px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
         .codex-p { font-size: 16px; line-height: 1.2; margin: 0 0 5px 0; }
         .highlight { background: #000; color: #fff; padding: 0 4px; }
-
         .hidden { display: none !important; }
         .blink-text { animation: blink 1.5s steps(2) infinite; cursor: pointer; }
     </style>
@@ -171,9 +73,10 @@
         <p id="loaderStatus" style="text-align:center; font-size: 20px; margin-top: 30px;" class="blink-text">[ НАЖМИ НА ЭКРАН ДЛЯ ЗАПУСКА ]</p>
     </div>
 
-    <div id="accessDeniedScreen" class="frame hidden" style="border-color: red; color: red;">
-        <div class="header-title" style="border-color: red;">FATAL ERROR</div>
-        <p style="text-align:center; font-size: 22px;">В ДОСТУПЕ ОТКАЗАНО</p>
+    <div id="errorScreen" class="frame hidden" style="border-color: var(--error-color); color: var(--error-color);">
+        <div class="header-title" style="border-color: var(--error-color);">FATAL ERROR</div>
+        <p id="errorMsgText" style="text-align:center; font-size: 20px; margin-bottom: 20px;">СВЯЗЬ ПРЕРВАНА</p>
+        <button class="menu-btn" style="background: var(--error-color); border-color: var(--error-color);" onclick="retryLastAction()">[ ПОВТОРИТЬ ПОПЫТКУ ]</button>
     </div>
 
     <div id="mainMenuScreen" class="frame hidden">
@@ -183,7 +86,6 @@
         </div>
         <div class="header-title">LISA TERMINAL</div>
         <p style="text-align: center; font-size: 18px; font-weight: bold;">Архив открыт, <span id="userName">Семпай</span>.</p>
-        
         <button class="menu-btn" onclick="openScreen('createTaskScreen')">[+] Новое Дело</button>
         <button class="menu-btn" onclick="loadTasks()">[=] Открытые Инциденты</button>
         <button class="menu-btn" style="background:#fff; color:#000;" onclick="loadStats()">[*] Состояние Разума</button>
@@ -191,46 +93,33 @@
 
     <div id="createTaskScreen" class="frame hidden">
         <div class="header-title">NEW INCIDENT</div>
-        
         <div class="input-group">
             <label>> ОПИСАНИЕ ИНЦИДЕНТА</label>
             <input type="text" id="taskName" placeholder="Изгнать демона прокрастинации..." autocomplete="off">
         </div>
-
         <div class="input-group">
             <label>> СФЕРА РАССЛЕДОВАНИЯ</label>
             <div class="select-wrapper">
                 <select id="taskStat">
-                    <option value="19ce1807-5ea9-8096-96bd-ce6d6f1c6944">🤓 Сила Клерка</option>
-                    <option value="19ce1807-5ea9-8033-96d6-e68cba9370fc">🫁 Здоровье</option>
-                    <option value="19ce1807-5ea9-80b2-89df-f78ce08cbb8a">📻 Музыка</option>
-                    <option value="19ce1807-5ea9-80ac-80ea-f8a186b375e9">👺 Рисование</option>
-                    <option value="19ce1807-5ea9-8064-99c1-c360929869e9">👽 3Д</option>
-                    <option value="19ce1807-5ea9-80f2-9009-fb37181d34af">🕵️‍♂️ Монтаж</option>
-                    <option value="19ee1807-5ea9-800c-ba78-e54ede7dac9a">🕎 Mentality</option>
+                    <option value="">Загрузка сфер...</option>
                 </select>
             </div>
         </div>
-
         <div class="input-group">
             <label>> УРОВЕНЬ УГРОЗЫ (XP)</label>
             <div class="xp-selector">
                 <input type="radio" id="xp15" name="taskXP" value="15" checked>
                 <label for="xp15">15 XP</label>
-
                 <input type="radio" id="xp30" name="taskXP" value="30">
                 <label for="xp30">30 XP</label>
-
                 <input type="radio" id="xp50" name="taskXP" value="50">
                 <label for="xp50">50 XP</label>
             </div>
         </div>
-
         <div class="input-group">
             <label>> ДАТА КАТАСТРОФЫ</label>
             <input type="date" id="taskDate">
         </div>
-
         <button id="browserSubmitBtn" class="menu-btn" style="margin-top: 25px; background: #000; color: #fff;" onclick="submitTask()">[ ЗАНЕСТИ В АРХИВ ]</button>
     </div>
 
@@ -268,8 +157,9 @@
         document.getElementById('taskDate').value = today;
 
         let typeWriterTimeout;
-        let globalStatsData = []; 
+        let globalBackendData = null; // Храним всё, что прислал сервер
         let backTarget = 'mainMenuScreen'; 
+        let lastFailedFunction = null; // Для кнопки ПОВТОРИТЬ ПОПЫТКУ
 
         tg.BackButton.onClick(() => {
             if(backTarget === 'statsScreen') loadStats();
@@ -298,30 +188,63 @@
             document.getElementById('soundToggleBtn').innerText = audio.muted ? '[ ♪ OFF ]' : '[ ♪ ON ]';
         }
 
+        function showError(msg, retryFunc) {
+            lastFailedFunction = retryFunc;
+            document.getElementById('errorMsgText').innerHTML = msg;
+            openScreen('errorScreen', 'mainMenuScreen');
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
+        }
+
+        function retryLastAction() {
+            if (lastFailedFunction) lastFailedFunction();
+            else openScreen('mainMenuScreen');
+        }
+
         async function authenticate() {
+            // Безопасный запуск аудио
             const audio = document.getElementById('bgMusic');
-            audio.play().catch(e => {});
+            try { await audio.play(); } catch (e) { console.warn("Autoplay blocked by browser policy"); }
+            
             const statusText = document.getElementById('loaderStatus');
             statusText.innerText = "СВЕРКА ПЕЧАТЕЙ...";
 
+            // Пока используем unsafe (исправим на следующем этапе)
             let tgId = tg.initDataUnsafe?.user?.id || 1211686949; 
 
             try {
+                // ПРЕДЗАГРУЗКА ДАННЫХ ДЛЯ ДРОПДАУНА (Без хардкода!)
+                fetch(`${N8N_GET_STATS_URL}?t=${Date.now()}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.categories) {
+                            const select = document.getElementById('taskStat');
+                            select.innerHTML = '';
+                            data.categories.forEach(cat => {
+                                select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+                            });
+                        }
+                    }).catch(e => console.error("Failed to load categories"));
+
                 const response = await fetch(AUTH_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tg_id: tgId })
+                    body: JSON.stringify({ tg_id: tgId }) // В будущем заменим на tg.initData
                 });
+                
+                if (!response.ok) throw new Error("HTTP Status " + response.status);
                 const data = await response.json();
-                if (response.ok && data.status === 'ok') {
+                
+                if (data.status === 'ok') {
                     document.getElementById('userName').innerText = data.name || "Семпай";
                     openScreen('mainMenuScreen');
                     document.getElementById('soundToggleBtn').classList.remove('hidden');
                     setTimeout(() => lisaSpeak(`Рада видеть вас живым, ${data.name || "Семпай"}.`), 500);
                 } else {
-                    openScreen('accessDeniedScreen');
+                    showError("В ДОСТУПЕ ОТКАЗАНО", authenticate);
                 }
-            } catch (e) { statusText.innerText = "[ ОШИБКА СЕРВЕРА ]"; }
+            } catch (e) { 
+                showError("ОШИБКА СВЯЗИ С СЕРВЕРОМ<br><span style='font-size:14px;'>" + e.message + "</span>", authenticate); 
+            }
         }
 
         function openScreen(screenId, target = 'mainMenuScreen') {
@@ -330,8 +253,11 @@
             document.getElementById(screenId).classList.remove('hidden');
             document.getElementById('lisaBubble').classList.add('hidden');
             
-            if (screenId !== 'mainMenuScreen') tg.BackButton.show();
-            else tg.BackButton.hide();
+            if (screenId !== 'mainMenuScreen' && screenId !== 'loaderScreen' && screenId !== 'errorScreen') {
+                tg.BackButton.show();
+            } else {
+                tg.BackButton.hide();
+            }
 
             if (screenId === 'createTaskScreen' && tg.initDataUnsafe?.user) {
                 tg.MainButton.setText("ЗАНЕСТИ В АРХИВ");
@@ -343,9 +269,7 @@
         }
 
         async function submitTask() {
-            // Считываем значение выбранной радио-кнопки для XP
             const selectedXp = document.querySelector('input[name="taskXP"]:checked').value;
-            
             const payload = {
                 task_name: document.getElementById('taskName').value,
                 stat_id: document.getElementById('taskStat').value,
@@ -355,14 +279,18 @@
             if (!payload.task_name) return;
             tg.MainButton.showProgress();
             try {
-                await fetch(N8N_CREATE_TASK_URL, {
+                const response = await fetch(N8N_CREATE_TASK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+                if (!response.ok) throw new Error("Server rejected task");
                 document.getElementById('taskName').value = '';
                 openScreen('mainMenuScreen');
                 setTimeout(() => lisaSpeak("Инцидент зафиксирован во тьме..."), 500);
+            } catch (e) {
+                tg.MainButton.hideProgress();
+                showError("СБОЙ ЗАПИСИ<br>Инцидент не был сохранен.", submitTask);
             } finally { tg.MainButton.hideProgress(); }
         }
 
@@ -372,6 +300,7 @@
             container.innerHTML = '<p style="text-align:center;" class="blink-text">ЧТЕНИЕ СВИТКОВ...</p>';
             try {
                 const response = await fetch(`${N8N_GET_TASKS_URL}?t=${Date.now()}`);
+                if (!response.ok) throw new Error("Bad response");
                 const rawData = await response.json();
                 const tasks = Array.isArray(rawData) ? rawData : (rawData.tasks || []);
                 container.innerHTML = tasks.length ? '' : '<p style="text-align:center; padding: 20px;">ИНЦИДЕНТОВ НЕТ. ТИШИНА.</p>';
@@ -385,210 +314,115 @@
                             <button class="complete-btn" onclick="completeTask('${task.id}', this)">[ ИЗГНАТЬ ]</button>
                         </div>`;
                 });
-            } catch (e) { container.innerHTML = `<p style="text-align:center; color:red;">[ ОШИБКА СВЯЗИ ]</p>`; }
+            } catch (e) { showError("ОШИБКА АРХИВА<br>Не удалось прочесть свитки.", loadTasks); }
         }
 
         async function completeTask(taskId, btn) {
-            // Эффект каста ритуала на кнопке
             btn.innerText = '[ ... ]';
-            
             const taskElement = document.getElementById(`task-${taskId}`);
-            if (taskElement) {
-                taskElement.style.animation = 'textGlitch 0.2s infinite';
-            }
+            if (taskElement) taskElement.style.animation = 'textGlitch 0.2s infinite';
 
             try {
-                // Отправляем запрос в n8n
-                await fetch(N8N_COMPLETE_TASK_URL, {
+                const response = await fetch(N8N_COMPLETE_TASK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ task_id: taskId })
                 });
-                
-                // 1. Тактильный отклик в Telegram
-                if (tg.HapticFeedback) {
-                    tg.HapticFeedback.notificationOccurred('success');
-                }
+                if (!response.ok) throw new Error("Failed");
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
 
-                // 2. Превращаем саму карточку задачи в жуткое уведомление!
                 if (taskElement) {
-                    // Меняем стили карточки на "черный глитч"
                     taskElement.style.cssText = "border: 2px dashed #000; padding: 15px; margin-bottom: 10px; text-align: center; background: #000; color: #fff; animation: textGlitch 0.3s infinite; box-shadow: none;";
-                    
-                    // Меняем содержимое
                     taskElement.innerHTML = "<b style='font-size: 18px;'>ИНЦИДЕНТ ИСЧЕРПАН.<br>ЗЛО ОТСТУПИЛО.</b>";
-                    
-                    // 3. Растворяем во тьме через 2 секунды
                     setTimeout(() => {
                         taskElement.style.transition = "all 0.5s ease";
                         taskElement.style.opacity = "0";
                         taskElement.style.transform = "scale(0.9)";
-                        
-                        setTimeout(() => taskElement.remove(), 500); // Окончательно удаляем из кода
+                        setTimeout(() => taskElement.remove(), 500); 
                     }, 2000);
                 }
-
                 lisaSpeak("Инцидент исчерпан. Зло отступило.");
-
             } catch (e) { 
                 btn.innerText = '[ ОШИБКА ]'; 
                 if (taskElement) taskElement.style.animation = 'none';
-                if (tg.showAlert) tg.showAlert("Ошибка изгнания: тьма не отпускает (обрыв связи).");
+                if (tg.showAlert) tg.showAlert("Ошибка изгнания: тьма не отпускает.");
             }
         }
 
-        const titleTrees = {
-            "сила клерка": ["Офисная Жертва", "Младший Детектив", "Архивариус Ужаса", "Куратор Запретного", "Жрец Бюрократии"],
-            "здоровье": ["Хрупкий Сосуд", "Выживший в Шиокаве", "Искатель Истины", "Закаленный Мраком", "Бессмертный Упырь"],
-            "музыка": ["Слушатель Помех", "Ловец Мертвых Частот", "Композитор Кошмаров", "Дирижер Ритуалов", "Голос Древних"],
-            "рисование": ["Маратель Бумаги", "Зарисовщик Теней", "Художник Скверны", "Творец Проклятых Гравюр", "Око Богов"],
-            "3д": ["Скульптор Глины", "Исказитель Форм", "Ткач Полигонов", "Архитектор Неевклидова Мира", "Владыка Измерений"],
-            "монтаж": ["Смотритель Кассет", "Склейщик Пленок", "Монтажер Снаффа", "Иллюзионист Хроники", "Властелин 25-го Кадра"],
-            "mentality": ["Параноик", "Исследователь Аномалий", "Оккультист", "Знаток Некрономикона", "Пробудивший Древних"]
-        };
-        const comboDict = {
-            "mentality+сила клерка": "Безумный Архивариус", "здоровье+сила клерка": "Неутомимый Детектив", "3д+рисование": "Творец Плоти",
-            "монтаж+музыка": "Режиссер Радиопомех", "mentality+рисование": "Провидец Апокалипсиса", "mentality+музыка": "Жрец Культа Шепота",
-            "3д+монтаж": "Исказитель Реальности", "здоровье+mentality": "Одержимый Выживший", "музыка+сила клерка": "Клерк Мертвых Радиостанций",
-            "монтаж+сила клерка": "Цензор Проклятых Кассет", "здоровье+монтаж": "Уцелевший Режиссер", "здоровье+рисование": "Анатом Кошмаров",
-            "3д+сила клерка": "Архитектор Кабинетов Зла", "3д+mentality": "Магистр Иных Сфер"
-        };
-        const tierLevels = [1, 3, 6, 10, 15];
-
-        function calcLvl(xp) {
-            let level = 1;
-            let req = 100; 
-            let acc = 0; 
-            while (xp >= acc + req) { acc += req; level++; req += 50; }
-            return level;
-        }
-
+        // --- ТОНКИЙ КЛИЕНТ (THIN CLIENT): ТОЛЬКО ОТРИСОВКА ---
         async function loadStats() {
             openScreen('statsScreen');
             const container = document.getElementById('statsListContent');
             const titleBlock = document.getElementById('titleBlockContainer');
             
-            container.innerHTML = '<p style="text-align:center;" class="blink-text">АНАЛИЗ ДУШИ...</p>';
+            container.innerHTML = '<p style="text-align:center;" class="blink-text">СВЯЗЬ С СЕРВЕРОМ АНАЛИЗА...</p>';
             titleBlock.style.display = 'none';
 
             try {
                 const response = await fetch(`${N8N_GET_STATS_URL}?t=${Date.now()}`);
-                const rawData = await response.json();
-                globalStatsData = Array.isArray(rawData) ? rawData : (rawData.stats || []);
+                if (!response.ok) throw new Error("Stats Server Error");
+                globalBackendData = await response.json(); // Сохраняем всё, что прислал сервер
+                
+                const stats = globalBackendData.stats || [];
 
                 container.innerHTML = '';
-                if(globalStatsData.length === 0) {
+                if(stats.length === 0) {
                     container.innerHTML = '<p style="text-align:center;">Данные о сущности не найдены.</p>';
                     return;
                 }
 
-                const p = globalStatsData[0];
-                const s = globalStatsData.length > 1 ? globalStatsData[1] : null;
-                const pLvl = calcLvl(p.xp);
-                let tier = 0;
-                if (pLvl >= 3) tier = 1; if (pLvl >= 6) tier = 2; if (pLvl >= 10) tier = 3; if (pLvl >= 15) tier = 4;
-                
-                let pName = p.name.toLowerCase().trim();
-                let title = titleTrees[pName] ? titleTrees[pName][tier] : "Неизвестная Сущность";
-
-                if (s && p.xp > 0 && s.xp >= p.xp * 0.65) {
-                    let sName = s.name.toLowerCase().trim();
-                    let comboKey = [pName, sName].sort().join("+");
-                    if (comboDict[comboKey]) title = comboDict[comboKey];
+                // Рендер звания из бэкенда
+                if (globalBackendData.profile) {
+                    document.getElementById('playerTitle').innerText = `[ ${globalBackendData.profile.title} ]`;
+                    titleBlock.style.display = 'block';
                 }
 
-                document.getElementById('playerTitle').innerText = `[ ${title} ]`;
-                titleBlock.style.display = 'block';
-
-                globalStatsData.forEach(stat => {
-                    let level = 1, req = 100, acc = 0;
-                    while (stat.xp >= acc + req) { acc += req; level++; req += 50; }
-                    let currXp = stat.xp - acc;
-                    let percent = (currXp / req) * 100;
-
+                // Рендер шкал
+                stats.forEach(stat => {
                     container.innerHTML += `
                         <div class="stat-container">
                             <div class="stat-header">
-                                <span>${stat.name} <span class="stat-level">LVL ${level}</span></span>
-                                <span style="font-size: 16px;">${currXp} / ${req} XP</span>
+                                <span>${stat.name} <span class="stat-level">LVL ${stat.level}</span></span>
+                                <span style="font-size: 16px;">${stat.current_xp} / ${stat.required_xp} XP</span>
                             </div>
                             <div class="stat-bar-bg">
-                                <div class="stat-bar-fill" style="width: ${percent}%;"></div>
+                                <div class="stat-bar-fill" style="width: ${stat.percent}%;"></div>
                             </div>
                         </div>
                     `;
                 });
-            } catch (e) { container.innerHTML = `<p style="text-align:center; color:red;">[ СБОЙ БИОМЕТРИИ ]</p>`; }
+            } catch (e) { showError("СБОЙ БИОМЕТРИИ<br>Сервер не отвечает.", loadStats); }
         }
 
         function openCodex() {
             openScreen('codexScreen', 'statsScreen');
             const container = document.getElementById('codexContent');
-            if (globalStatsData.length === 0) {
+            if (!globalBackendData || !globalBackendData.profile) {
                 container.innerHTML = '<p>Нет данных для анализа.</p>'; return;
             }
 
-            const p = globalStatsData[0];
-            const s = globalStatsData.length > 1 ? globalStatsData[1] : null;
-            const pLvl = calcLvl(p.xp);
+            const prof = globalBackendData.profile;
             
-            let tier = 0;
-            if (pLvl >= 3) tier = 1; if (pLvl >= 6) tier = 2; if (pLvl >= 10) tier = 3; if (pLvl >= 15) tier = 4;
-            
-            const pName = p.name.toLowerCase().trim();
-            const basePath = titleTrees[pName] || [];
-            
-            let isHybrid = false;
-            let sNameRaw = s ? s.name.toLowerCase().trim() : "";
-            
-            if (s && p.xp > 0 && s.xp >= p.xp * 0.65) {
-                let comboKey = [pName, sNameRaw].sort().join("+");
-                if (comboDict[comboKey]) isHybrid = true;
-            }
-
             let html = `
                 <div class="codex-section">
                     <div class="codex-h">ДОМИНАНТА РАЗУМА</div>
-                    <p class="codex-p">Твой основной вектор развития — <span class="highlight">${p.name}</span> (Уровень ${pLvl}). Это диктует твою первородную форму.</p>
+                    <p class="codex-p">Ваш основной вектор развития — <span class="highlight">${prof.dominanta_name}</span> (Уровень ${prof.dominanta_lvl}). Это диктует первородную форму.</p>
                 </div>
             `;
 
-            if (isHybrid) {
+            if (prof.is_hybrid) {
                 html += `
                 <div class="codex-section">
                     <div class="codex-h">МУТАЦИЯ: АКТИВНА</div>
-                    <p class="codex-p">Влияние <span class="highlight">${s.name}</span> достаточно велико, чтобы запустить синтез. Ваша сущность эволюционировала в гибрид.</p>
+                    <p class="codex-p">Влияние <span class="highlight">${prof.mutation_name}</span> достаточно велико, чтобы запустить синтез. Ваша сущность эволюционировала в гибрид.</p>
                 </div>`;
             } else {
                 html += `
                 <div class="codex-section">
                     <div class="codex-h">МУТАЦИЯ: СПЯЩИЙ ГЕН</div>
-                    <p class="codex-p">Ваши второстепенные навыки слишком слабы, чтобы образовать синтез с доминантой.</p>
+                    <p class="codex-p">Ваши второстепенные навыки слишком слабы, чтобы образовать синтез с доминантой (нужно минимум 65% опыта от основы).</p>
                 </div>`;
             }
-
-            let nextLevelReq = tier < 4 ? tierLevels[tier + 1] : "MAX";
-            let nextTitle = tier < 4 ? basePath[tier + 1] : "АБСОЛЮТ";
-            
-            html += `
-                <div class="codex-section">
-                    <div class="codex-h">ВЕКТОР ЭВОЛЮЦИИ</div>
-                    <p class="codex-p">Чтобы перейти на следующую ступень, вам нужен <span class="highlight">УРОВЕНЬ ${nextLevelReq}</span> в навыке <b>${p.name}</b>.</p>
-                    <p class="codex-p">Грядущая форма: <b>[ ${nextTitle} ]</b></p>
-                </div>
-            `;
-
-            let reqXp = Math.floor(p.xp * 0.65);
-            html += `<div class="codex-section"><div class="codex-h">ВЕКТОР СИНТЕЗА</div>`;
-            
-            if (isHybrid) {
-                html += `<p class="codex-p">Чтобы удержать форму, держите <b>${s.name}</b> не ниже <span class="highlight">${reqXp} XP</span>.</p>`;
-            } else if (s) {
-                let xpShort = reqXp - s.xp;
-                html += `<p class="codex-p">Катализатор мутации — <b>${s.name}</b>. Добудьте еще <span class="highlight">${xpShort} XP</span>, чтобы запустить синтез.</p>`;
-            }
-            html += `</div>`;
-
             container.innerHTML = html;
         }
     </script>
