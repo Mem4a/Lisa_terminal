@@ -205,12 +205,19 @@
             try { await audio.play(); } catch (e) { console.warn("Autoplay blocked by browser"); }
             
             const statusText = document.getElementById('loaderStatus');
-            statusText.innerText = "СВЕРКА ПЕЧАТЕЙ...";
+            statusText.innerText = "РАСШИФРОВКА ПЕЧАТЕЙ...";
 
-            let tgId = tg.initDataUnsafe?.user?.id || 1211686949; 
+            // 1. БЕРЕМ ЗАШИФРОВАННЫЕ ДАННЫЕ ОТ ТЕЛЕГРАМ
+            const initData = tg.initData; 
+
+            // Если открыли не в Телеграме (в обычном браузере), сразу шлем лесом
+            if (!initData) {
+                showError("КРИТИЧЕСКИЙ СБОЙ<br>Доступ только через Telegram", authenticate);
+                return;
+            }
 
             try {
-                // ОПТИМИЗАЦИЯ 2: Собираем опции селекта в строку перед вставкой
+                // Предзагрузка категорий для выпадающего списка
                 fetch(`${N8N_GET_STATS_URL}?t=${Date.now()}`)
                     .then(res => res.json())
                     .then(data => {
@@ -224,10 +231,11 @@
                         }
                     }).catch(e => console.error("Failed to load categories"));
 
+                // 2. ОТПРАВЛЯЕМ ШИФР НА СЕРВЕР (АВТОРИЗАЦИЯ)
                 const response = await fetch(AUTH_WEBHOOK_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tg_id: tgId }) 
+                    body: JSON.stringify({ initData: initData }) 
                 });
                 
                 if (!response.ok) throw new Error("HTTP Status " + response.status);
@@ -237,9 +245,10 @@
                     document.getElementById('userName').innerText = data.name || "Семпай";
                     openScreen('mainMenuScreen');
                     document.getElementById('soundToggleBtn').classList.remove('hidden');
-                    setTimeout(() => lisaSpeak(`Рада видеть вас живым, ${data.name || "Семпай"}.`), 500);
+                    setTimeout(() => lisaSpeak(`Печать подтверждена. Добро пожаловать, ${data.name || "Семпай"}.`), 500);
                 } else {
-                    showError("В ДОСТУПЕ ОТКАЗАНО", authenticate);
+                    // Если хакер прислал неверный шифр
+                    showError("В ДОСТУПЕ ОТКАЗАНО<br>Фальшивая печать.", authenticate);
                 }
             } catch (e) { 
                 showError("ОШИБКА СВЯЗИ С СЕРВЕРОМ<br><span style='font-size:14px;'>" + e.message + "</span>", authenticate); 
